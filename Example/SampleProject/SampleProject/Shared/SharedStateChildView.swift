@@ -10,9 +10,7 @@ import SwiftUI
 
 struct SharedStateChildView: View {
     
-    @StateObject var store = Store {
-        SharedStateChildReactable()
-    }
+    @StateObject var store = Store(SharedStateChildReactable())
     
     var body: some View {
         HStack {

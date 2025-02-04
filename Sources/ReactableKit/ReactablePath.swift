@@ -8,15 +8,15 @@
 import Foundation
 import SwiftUI
 
-public protocol PathState: Hashable { }
+public protocol PathState { }
 
-public struct AnyPathState: PathState {
+public struct AnyPathState: PathState, Hashable {
     private let base: any PathState
     private let identifier: AnyHashable
 
     public init<T: PathState>(_ base: T) {
         self.base = base
-        self.identifier = base.hashValue
+        self.identifier = UUID()
     }
 
     public func getBase() -> any PathState {
@@ -34,7 +34,7 @@ public struct AnyPathState: PathState {
 
 
 @available(iOS 16.0, *)
-public struct ReactablePath: Equatable, Hashable {
+public struct ReactablePath: Hashable {
     private var id: String = UUID().uuidString
     private var path: NavigationPath = .init()
     

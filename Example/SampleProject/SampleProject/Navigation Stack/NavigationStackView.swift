@@ -9,9 +9,7 @@ import SwiftUI
 @_exported import ReactableKit
 
 struct NavigationStackView: View {
-    @StateObject var store = Store {
-        NavigationStackReactable()
-    }
+    @StateObject var store = Store(NavigationStackReactable())
     
     var body: some View {
         NavigationStack(reactablePath: self.$store.state.path) {
@@ -41,13 +39,13 @@ struct NavigationStackView: View {
         } destination: { state in
             switch state {
             case let state as CounterReactable.State:
-                CounterView(store: Store { .init(state: state) })
+                CounterView(store: Store(.init(state: state)))
                 
             case let state as BindingReactable.State:
-                BindingView(store: Store { .init(state: state) })
+                BindingView(store: Store(.init(state: state)))
                 
             case let state as SharedStateReactable.State:
-                SharedStateView(store: Store { .init(state: state) })
+                SharedStateView(store: Store(.init(state: state)))
             
             case let state as UIKitExampleReactable.State:
                 SwiftUIUIView()

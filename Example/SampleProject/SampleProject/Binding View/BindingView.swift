@@ -8,9 +8,7 @@
 import SwiftUI
 
 struct BindingView: View {
-    @ObservedObject var store = Store {
-        BindingReactable()
-    }
+    @ObservedObject var store = Store(BindingReactable())
     
     var body: some View {
         VStack {

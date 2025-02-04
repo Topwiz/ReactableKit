@@ -9,9 +9,7 @@ import SwiftUI
 
 struct SharedStateView: View {
     
-    @StateObject var store = Store {
-        SharedStateReactable()
-    }
+    @StateObject var store = Store(SharedStateReactable())
     
     var drawable: SharedStateReactable.Drawable { self.store.state.drawable }
     
@@ -20,7 +18,7 @@ struct SharedStateView: View {
             Text("Shared State")
                 .padding()
                 
-            SharedStateChildView(store: Store { SharedStateChildReactable() })
+            SharedStateChildView(store: Store(SharedStateChildReactable()))
             
             Text("Age: \(self.drawable.age)")
             

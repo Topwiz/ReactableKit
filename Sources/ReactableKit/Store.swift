@@ -30,6 +30,12 @@ public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
         self.reactable.registerTransform()
     }
     
+    public init(_ create: R) {
+        self.reactable = create
+        self.setup()
+        self.reactable.registerTransform()
+    }
+    
     private func setup() {
         let mirror = Mirror(reflecting: self.reactable.currentState)
         

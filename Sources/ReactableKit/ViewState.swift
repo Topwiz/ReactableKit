@@ -15,7 +15,7 @@ protocol PublishedWrapper {
 }
 
 @propertyWrapper
-public class ViewState<Value: Hashable>: @unchecked Sendable, Hashable, PublishedWrapper {
+public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, PublishedWrapper {
     @Atomic private var value: Value
     private var ignoreEquality: Bool
     var objectWillChange: WeakObservableObjectPublisher?
@@ -51,10 +51,6 @@ public class ViewState<Value: Hashable>: @unchecked Sendable, Hashable, Publishe
 
     func set(objectWillChange: ObservableObjectPublisher) {
         self.objectWillChange = .init(objectWillChange)
-    }
-    
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(value)
     }
     
     public static func == (lhs: ViewState<Value>, rhs: ViewState<Value>) -> Bool {

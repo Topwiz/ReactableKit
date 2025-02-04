@@ -10,9 +10,7 @@ import SwiftUI
 import ReactableKit
 
 struct CounterView: View {
-    @ObservedObject var store = Store {
-        CounterReactable()
-    }
+    @ObservedObject var store = Store(CounterReactable())
     
     var body: some View {
         VStack(spacing: 20) {
