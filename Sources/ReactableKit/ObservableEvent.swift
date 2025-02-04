@@ -9,7 +9,12 @@ import Foundation
 import Combine
 
 public protocol ObservableEvent {
+    /// Returns a publisher that emits values whenever an event of this type is sent.
+    /// - Returns: An `AnyPublisher` emitting instances of the event.
     static func observe() -> AnyPublisher<Self, Never>
+    
+    /// Sends an event to all subscribers.
+    /// - Parameter action: The event instance to send.
     static func send(_ action: Self)
 }
 

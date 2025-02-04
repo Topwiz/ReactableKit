@@ -17,13 +17,13 @@ protocol PublishedWrapper {
 @propertyWrapper
 public class ViewState<Value: Equatable & Hashable>: @unchecked Sendable, Hashable, PublishedWrapper {
     @Atomic private var value: Value
-    private var disableCheckingEquatable: Bool
+    private var ignoreEquality: Bool
     var objectWillChange: WeakObservableObjectPublisher?
     
     public var wrappedValue: Value {
         get { value }
         set {
-            if !self.disableCheckingEquatable {
+            if !self.ignoreEquality {
                 guard newValue != value else { return }
             }
             value = newValue
@@ -44,9 +44,9 @@ public class ViewState<Value: Equatable & Hashable>: @unchecked Sendable, Hashab
         }
     }
     
-    public init(wrappedValue: Value, disableCheckingEquatable: Bool = false) {
+    public init(wrappedValue: Value, ignoreEquality: Bool = false) {
         self.value = wrappedValue
-        self.disableCheckingEquatable = disableCheckingEquatable
+        self.ignoreEquality = ignoreEquality
     }
 
     func set(objectWillChange: ObservableObjectPublisher) {

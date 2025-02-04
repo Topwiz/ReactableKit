@@ -24,6 +24,7 @@
 		A1F2B82B2D499D70009391A2 /* SharedStateChildReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B82A2D499D70009391A2 /* SharedStateChildReactable.swift */; };
 		A1F2B82E2D49D4CF009391A2 /* ManagerSampleReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B82D2D49D4CF009391A2 /* ManagerSampleReactable.swift */; };
 		A1F2B83E2D4FA3AE009391A2 /* UIKitExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B83D2D4FA3AE009391A2 /* UIKitExample.swift */; };
+		A1F2B8882D523BB2009391A2 /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1F2B8872D523BB2009391A2 /* ReactableKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F2B8882D523BB2009391A2 /* ReactableKit in Frameworks */,
 				A1F2B8172D4335CE009391A2 /* ReactableKit in Frameworks */,
 				A1F2B8222D466527009391A2 /* ReactableKit in Frameworks */,
 			);
@@ -171,6 +173,7 @@
 			packageProductDependencies = (
 				A1F2B8162D4335CE009391A2 /* ReactableKit */,
 				A1F2B8212D466527009391A2 /* ReactableKit */,
+				A1F2B8872D523BB2009391A2 /* ReactableKit */,
 			);
 			productName = LogifyExmaple;
 			productReference = A1AC02292D432F870021693D /* ExmapleApp.app */;
@@ -201,7 +204,7 @@
 			mainGroup = A1AC02202D432F870021693D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A1F2B8202D466527009391A2 /* XCLocalSwiftPackageReference "../../../Reactable" */,
+				A1F2B8862D523BB2009391A2 /* XCRemoteSwiftPackageReference "ReactableKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1AC022A2D432F870021693D /* Products */;
@@ -373,10 +376,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SampleProject/Preview Content\"";
-				DEVELOPMENT_TEAM = T37K32BFN5;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -389,8 +392,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.logify.LogifyExmaple;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reactablekit.sample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -402,10 +406,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SampleProject/Preview Content\"";
-				DEVELOPMENT_TEAM = T37K32BFN5;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -418,8 +422,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.logify.LogifyExmaple;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reactablekit.sample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -449,12 +454,16 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		A1F2B8202D466527009391A2 /* XCLocalSwiftPackageReference "../../../Reactable" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../Reactable;
+/* Begin XCRemoteSwiftPackageReference section */
+		A1F2B8862D523BB2009391A2 /* XCRemoteSwiftPackageReference "ReactableKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Topwiz/ReactableKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		A1F2B8162D4335CE009391A2 /* ReactableKit */ = {
@@ -463,6 +472,11 @@
 		};
 		A1F2B8212D466527009391A2 /* ReactableKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			productName = ReactableKit;
+		};
+		A1F2B8872D523BB2009391A2 /* ReactableKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1F2B8862D523BB2009391A2 /* XCRemoteSwiftPackageReference "ReactableKit" */;
 			productName = ReactableKit;
 		};
 /* End XCSwiftPackageProductDependency section */

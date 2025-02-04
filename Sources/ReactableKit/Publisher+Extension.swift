@@ -8,18 +8,18 @@
 import Foundation
 import Combine
 
+/// Defines an error type for asynchronous operations.
 enum AsyncError: Error {
     case finishedWithoutValue
 }
-
-import Combine
-import Foundation
 
 // MARK: - Combine Publisher Extensions
 
 public extension Publisher where Output == Sendable {
     
-    /// `async`를 사용하여 첫 번째 값이 도착할 때까지 기다리는 비동기 함수
+    /// Waits for the first emitted value asynchronously using `async`.
+    /// - Returns: The first emitted value of the publisher.
+    /// - Throws: `AsyncError.finishedWithoutValue` if no value is received.
     func async() async throws -> Output {
         try await withCheckedThrowingContinuation { continuation in
             var cancellable: AnyCancellable?
@@ -51,19 +51,25 @@ public extension Publisher where Output == Sendable {
 
 public extension Publisher where Failure == Never {
     
-    /// 일정 간격으로 값을 발행하는 타이머 생성
+    /// Creates a timer that emits values at a specified interval.
+    /// - Parameters:
+    ///   - interval: The time interval between emissions.
+    ///   - scheduler: The run loop on which the timer runs (default: `.main`).
+    /// - Returns: A publisher that emits the current date at the specified interval.
     static func timer(interval: TimeInterval, scheduler: RunLoop = .main) -> AnyPublisher<Date, Never> {
         Timer.publish(every: interval, on: scheduler, in: .default)
             .autoconnect()
             .eraseToAnyPublisher()
     }
     
-    /// 즉시 완료되는 빈 Publisher 생성
+    /// Creates an empty publisher that completes immediately.
     static func empty() -> AnyPublisher<Output, Never> {
         Empty<Output, Never>().eraseToAnyPublisher()
     }
     
-    /// 주어진 값을 즉시 방출하는 Publisher 생성
+    /// Creates a publisher that emits a single value immediately.
+    /// - Parameter value: The value to emit.
+    /// - Returns: A publisher emitting the given value.
     static func just(_ value: Output) -> AnyPublisher<Output, Never> {
         Just(value).eraseToAnyPublisher()
     }
@@ -73,12 +79,16 @@ public extension Publisher where Failure == Never {
 
 public extension Publisher {
     
-    /// 여러 개의 Publisher를 병합
+    /// Merges multiple publishers into a single publisher.
+    /// - Parameter publishers: The array of publishers to merge.
+    /// - Returns: A merged publisher emitting values from all input publishers.
     static func merge(_ publishers: [AnyPublisher<Output, Failure>]) -> AnyPublisher<Output, Failure> {
         Publishers.MergeMany(publishers).eraseToAnyPublisher()
     }
     
-    /// 여러 개의 Publisher를 순차적으로 실행
+    /// Concatenates multiple publishers sequentially.
+    /// - Parameter publishers: The array of publishers to concatenate.
+    /// - Returns: A concatenated publisher executing publishers in sequence.
     static func concat(_ publishers: [AnyPublisher<Output, Failure>]) -> AnyPublisher<Output, Failure> {
         guard let first = publishers.first else { return Empty<Output, Failure>().eraseToAnyPublisher() }
         
@@ -92,19 +102,26 @@ public extension Publisher {
 
 public extension Publisher {
     
-    /// 지정된 시간 후 값 발행
+    /// Delays emission of values by a specified time interval.
+    /// - Parameters:
+    ///   - interval: The time delay before values are emitted.
+    ///   - scheduler: The scheduler on which the delay is applied.
     func delay(for interval: TimeInterval, scheduler: DispatchQueue) -> AnyPublisher<Output, Failure> {
         self.delay(for: .seconds(interval), scheduler: scheduler)
             .eraseToAnyPublisher()
     }
     
-    /// 지정된 시간 간격 동안 값 스로틀링
+    /// Throttles values to emit at a limited rate.
+    /// - Parameters:
+    ///   - interval: The time window for throttling.
+    ///   - scheduler: The scheduler on which the throttle is applied.
+    ///   - latest: Whether to emit the latest value (default: `true`).
     func throttle(for interval: TimeInterval, scheduler: DispatchQueue, latest: Bool = true) -> AnyPublisher<Output, Failure> {
         self.throttle(for: .seconds(interval), scheduler: scheduler, latest: latest)
             .eraseToAnyPublisher()
     }
     
-    /// 중복된 값 제거
+    /// Removes consecutive duplicate values.
     func distinctUntilChanged() -> AnyPublisher<Output, Failure> where Output: Equatable {
         self.removeDuplicates()
             .eraseToAnyPublisher()
@@ -114,8 +131,10 @@ public extension Publisher {
 // MARK: - Data Transformation Operators
 
 public extension Publisher {
-
-    /// 다른 `Publisher`가 값을 방출할 때까지 값을 방출
+    
+    /// Emits values until another publisher emits a value.
+    /// - Parameter trigger: A publisher that stops the emission of values.
+    /// - Returns: A publisher that stops when the trigger emits a value.
     func takeUntil<T>(_ trigger: AnyPublisher<T, Failure>) -> AnyPublisher<Output, Failure> {
         self.prefix(untilOutputFrom: trigger)
             .eraseToAnyPublisher()
@@ -126,7 +145,11 @@ public extension Publisher {
 
 public extension Publisher {
     
-    /// `sink`를 통해 값과 오류를 옵셔빙 (옵셔널 지원)
+    /// Observes values and completion states using `sink`.
+    /// - Parameters:
+    ///   - receiveCompletion: A closure handling completion events.
+    ///   - receiveValue: A closure handling emitted values.
+    /// - Returns: A cancellable instance.
     func sink(
         receiveCompletion: ((Subscribers.Completion<Failure>) -> Void)? = nil,
         receiveValue: ((Output) -> Void)? = nil
@@ -141,7 +164,9 @@ public extension Publisher {
         )
     }
     
-    /// 디버깅을 위한 로깅 기능 추가
+    /// Adds logging for debugging purposes.
+    /// - Parameter prefix: The prefix for log messages.
+    /// - Returns: A publisher with logging applied.
     func debug(_ prefix: String = "Publisher") -> AnyPublisher<Output, Failure> {
         self.handleEvents(
             receiveSubscription: { _ in print("\(prefix) - Subscription started") },

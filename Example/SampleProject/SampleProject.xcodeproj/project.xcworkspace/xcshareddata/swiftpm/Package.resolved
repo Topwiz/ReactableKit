@@ -1,0 +1,15 @@
+{
+  "originHash" : "694f392ac7290b9d88eef1b58b7c7e242505676f85033892dfd949c6a6fa4ba8",
+  "pins" : [
+    {
+      "identity" : "reactablekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Topwiz/ReactableKit",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5966062606fc923d0da2b5ba2ca321c70fba3987"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -1,19 +1,21 @@
-# ReactableKit 
+# 🚀 ReactableKit
 
-## Introduction
+## 📌 Introduction
 
-ReactableKit은 ReactorKit의 기본 구조를 바탕으로 SwiftUI에서의 상태 관리 및 비즈니스 로직을 효율적으로 관리하기 위해 개발되었습니다.
+**ReactableKit** is a lightweight yet powerful **state management** framework designed for **SwiftUI** applications. Inspired by **ReactorKit**, it provides a structured approach to handling **business logic** and **state transformations** efficiently.
 
-## Requirements
+## 📋 Requirements
 
-- iOS 15.0+
-- Swift 5+
+- ✅ iOS 15.0+
+- ✅ Swift 5+
 
-## Usage
+---
 
-### 1. Reactable 기본 구조
+## ⚡ Usage
 
-Reactable을 사용하려면 `Reactable` 프로토콜을 준수하는 클래스를 생성해야 합니다. 기본적으로 `Action`, `State`, `Mutation`을 정의하고 `func mutate`, `func reduce`을 구현합니다.
+### 1️⃣ Core Structure of Reactable
+
+To use `Reactable`, create a class conforming to the `Reactable` protocol. Define `Action`, `State`, and `Mutation`, and implement `mutate(action:)` and `reduce(state:mutate:)`.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -51,9 +53,9 @@ final class CounterReactable: Reactable {
 }
 ```
 
-### 1-2. Reactable `transformAction`
+### 2️⃣ Transforming Actions with `transformAction`
 
-`transformAction`을 사용하면 특정 이벤트를 감지하여 `Action`을 자동으로 트리거할 수 있습니다.
+`transformAction` enables automatic **event-based action triggers**. This is useful for handling timers, network events, or external input sources.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -100,9 +102,9 @@ final class CounterReactable: Reactable {
 }
 ```
 
-### 1-3. Reactable를 SwiftUI View에서 사용하는 예제
+### 3️⃣ Integrating Reactable with SwiftUI
 
-Reactable을 SwiftUI에서 사용할 때는 `Store`을 사용해서 상태 변화를 감지하고 `action`을 전달 합니다.
+Utilize `Store` to observe state changes and dispatch `Action` within a SwiftUI view.
 
 ```swift
 struct CounterView: View {
@@ -124,37 +126,49 @@ struct CounterView: View {
 }
 ```
 
-### 1-4. Reactable action
-Reactable에 Action을 보낼때 완료시점을 알 수 있습니다.
+### 4️⃣ Dispatching Actions in Reactable
+
+Reactable provides multiple ways to **send actions and track completion**.
+
 ```swift
+// Using async-await
 Task {
-    let state = try await ManagerSampleReactable.shared.action(.test)
+    let state = try await CounterReactable().action(.increase)
 }
 
-let action = ManagerSampleReactable.shared.actionPublish(.test)
+// Using Combine’s sink
+let action = CounterReactable().actionPublish(.increase)
     .sink { state in
-                
+        print(state)
     }
 
-ManagerSampleReactable.shared.action(.test) { state in
-            
+// Using Completion Handler
+CounterReactable().action(.increase) { result in
+    print(result)
 }
 ```
 
-### 2. Property Wrapper
-#### @ViewState
-`@ViewState`는 값이 변경됐을때 View를 업데이트하기 위해 사용합니다. Reactable State 내에서 사용해야하며 ViewState를 붙이지 않는 다른 property들은 변경 되어도 View가 업데이트 되지 않습니다.
+---
+
+## 🎯 Advanced Features
+
+### 1️⃣ Property Wrappers
+
+#### 🎨 `@ViewState`
+
+`@ViewState` ensures **automatic UI updates** when values change. Properties without `@ViewState` will not trigger UI updates.
+
 ```swift
 struct State {
-    // 같은 값을 set하는 경우에는 view가 업데이트 되지 않습니다.
     @ViewState var count: Int = 1
-    // 같은 값을 set하는 경우에도 view는 업데이트 됩니다.
-    @ViewState(disableCheckingEquatable: true) var count1: Int = 1
+    @ViewState(disableCheckingEquatable: true) var forceUpdate: Bool = false
 }
 ```
 
-#### @Shared
-`@Shared` property wrapper는 Parent와 Child간에 State를 공유하기 위해 사용합니다.
+#### 🔄 `@Shared`
+
+`@Shared` enables **state sharing** between **parent and child components**.
+
 ```swift
 struct SharedState: Codable, Equatable, Hashable {
     var username: String = ""
@@ -163,38 +177,53 @@ struct SharedState: Codable, Equatable, Hashable {
 }
 
 struct State {
-    @Shared(.memory) var sharedState = SharedState() 
-    @ViewState var drawable: Drawable = .init()
+    @Shared(.memory) var sharedState = SharedState()
+    @ViewState var displayInfo: String = ""
 }
 ```
-- `@Shared`는 값이 변경이 되어도 View는 업데이트 되지 않습니다.
 
-### 4. ObservableEvent
-Child에서 Parent로 action을 전달해야할때 사용합니다.
+> ⚠️ `@Shared` does not automatically update the UI when values change.
+
+### 2️⃣ `ObservableEvent` (Child → Parent Communication)
+
+`ObservableEvent` enables **child components to send actions to parent components**.
+
 ```swift
 // Child Reactable
-class SharedStateChildReactable: Reactable { 
+class ChildReactable: Reactable { 
     enum Action: ObservableEvent {
-        case parentAction(Int)
+        case notifyParent(Int)
     }
 }
 
 // Parent Reactable
 func transformAction() -> AnyPublisher<Action, Never> {
-    let childEvent = SharedStateChildReactable.Action.observe()
+    let childEvent = ChildReactable.Action.observe()
         .filter {
-            if case .parentAction = $0 { return true }
+            if case .notifyParent = $0 { return true }
             return false
         }
-        .map(Action.childAction)
+        .map(Action.notifyParent)
         .eraseToAnyPublisher()
-        
+    
     return .merge([
         childEvent,
     ])
 }
 ```
 
-## License
+---
 
-ReactableKit은 MIT 라이선스를 따릅니다.
+## 🏗️ Roadmap
+- [ ] ✅ Unit Testing
+- [ ] 🚀 Performance Optimizations
+- [ ] 📖 Additional Documentation & Examples
+
+## 🔗 References
+
+- [ReactorKit](https://github.com/ReactorKit/ReactorKit)
+- [The Composable Architecture (TCA)](https://github.com/pointfreeco/swift-composable-architecture)
+
+## 📜 License
+
+**ReactableKit** is available under the MIT license.
