@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol IdentityHashable: AnyObject, Equatable, Hashable { }
+public protocol IdentityHashable: AnyObject, Hashable { }
 
 public extension IdentityHashable {
     static func == (lhs: Self, rhs: Self) -> Bool {

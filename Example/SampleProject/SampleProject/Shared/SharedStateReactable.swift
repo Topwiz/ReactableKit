@@ -24,7 +24,7 @@ final class SharedStateReactable: Reactable {
         var isPremium: Bool = false
     }
     
-    struct SharedState: Codable, Equatable, Hashable {
+    struct SharedState: Codable, Hashable {
         var username: String = ""
         var age: Int = 0
         var isPremium: Bool = false

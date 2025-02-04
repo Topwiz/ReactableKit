@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A16C162A2D527A8400E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16292D527A8400E278BB /* ReactableKit */; };
+		A16C162D2D527A9A00E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C162C2D527A9A00E278BB /* ReactableKit */; };
+		A16C16332D527ABF00E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16322D527ABF00E278BB /* ReactableKit */; };
+		A16C16362D527D8400E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16352D527D8400E278BB /* ReactableKit */; };
 		A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80A2D433508009391A2 /* NavigationStackView.swift */; };
 		A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80B2D433508009391A2 /* ExmapleApp.swift */; };
 		A1F2B80F2D433508009391A2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1F2B8072D433508009391A2 /* Preview Assets.xcassets */; };
@@ -24,7 +28,6 @@
 		A1F2B82B2D499D70009391A2 /* SharedStateChildReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B82A2D499D70009391A2 /* SharedStateChildReactable.swift */; };
 		A1F2B82E2D49D4CF009391A2 /* ManagerSampleReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B82D2D49D4CF009391A2 /* ManagerSampleReactable.swift */; };
 		A1F2B83E2D4FA3AE009391A2 /* UIKitExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B83D2D4FA3AE009391A2 /* UIKitExample.swift */; };
-		A1F2B8882D523BB2009391A2 /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1F2B8872D523BB2009391A2 /* ReactableKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,9 +54,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1F2B8882D523BB2009391A2 /* ReactableKit in Frameworks */,
+				A16C16362D527D8400E278BB /* ReactableKit in Frameworks */,
+				A16C162A2D527A8400E278BB /* ReactableKit in Frameworks */,
 				A1F2B8172D4335CE009391A2 /* ReactableKit in Frameworks */,
+				A16C16332D527ABF00E278BB /* ReactableKit in Frameworks */,
 				A1F2B8222D466527009391A2 /* ReactableKit in Frameworks */,
+				A16C162D2D527A9A00E278BB /* ReactableKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,7 +179,10 @@
 			packageProductDependencies = (
 				A1F2B8162D4335CE009391A2 /* ReactableKit */,
 				A1F2B8212D466527009391A2 /* ReactableKit */,
-				A1F2B8872D523BB2009391A2 /* ReactableKit */,
+				A16C16292D527A8400E278BB /* ReactableKit */,
+				A16C162C2D527A9A00E278BB /* ReactableKit */,
+				A16C16322D527ABF00E278BB /* ReactableKit */,
+				A16C16352D527D8400E278BB /* ReactableKit */,
 			);
 			productName = LogifyExmaple;
 			productReference = A1AC02292D432F870021693D /* ExmapleApp.app */;
@@ -204,7 +213,7 @@
 			mainGroup = A1AC02202D432F870021693D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A1F2B8862D523BB2009391A2 /* XCRemoteSwiftPackageReference "ReactableKit" */,
+				A16C16342D527D8300E278BB /* XCLocalSwiftPackageReference "../../../Reactable" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1AC022A2D432F870021693D /* Products */;
@@ -454,29 +463,36 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		A1F2B8862D523BB2009391A2 /* XCRemoteSwiftPackageReference "ReactableKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Topwiz/ReactableKit";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		A16C16342D527D8300E278BB /* XCLocalSwiftPackageReference "../../../Reactable" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../Reactable;
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A16C16292D527A8400E278BB /* ReactableKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ReactableKit;
+		};
+		A16C162C2D527A9A00E278BB /* ReactableKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ReactableKit;
+		};
+		A16C16322D527ABF00E278BB /* ReactableKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ReactableKit;
+		};
+		A16C16352D527D8400E278BB /* ReactableKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ReactableKit;
+		};
 		A1F2B8162D4335CE009391A2 /* ReactableKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ReactableKit;
 		};
 		A1F2B8212D466527009391A2 /* ReactableKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = ReactableKit;
-		};
-		A1F2B8872D523BB2009391A2 /* ReactableKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1F2B8862D523BB2009391A2 /* XCRemoteSwiftPackageReference "ReactableKit" */;
 			productName = ReactableKit;
 		};
 /* End XCSwiftPackageProductDependency section */

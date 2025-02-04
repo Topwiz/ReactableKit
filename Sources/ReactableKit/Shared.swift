@@ -18,7 +18,7 @@ public enum StorageType: Hashable {
 
 // MARK: - Property Wrapper: Shared
 @propertyWrapper
-public struct Shared<Value: Codable & Equatable & Hashable>: @unchecked Sendable, Equatable, Hashable {
+public struct Shared<Value: Codable & Hashable>: @unchecked Sendable, Hashable {
     private let key: String
     private let storage: StorageType
     private let subject: CurrentValueSubject<Value, Never>
@@ -135,7 +135,7 @@ public struct Shared<Value: Codable & Equatable & Hashable>: @unchecked Sendable
     static func generateKey(for type: Any.Type) -> String {
         return String(reflecting: type)
     }
-
+    
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.wrappedValue)
     }

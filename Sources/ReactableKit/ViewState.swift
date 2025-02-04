@@ -15,7 +15,7 @@ protocol PublishedWrapper {
 }
 
 @propertyWrapper
-public class ViewState<Value: Equatable & Hashable>: @unchecked Sendable, Hashable, PublishedWrapper {
+public class ViewState<Value: Hashable>: @unchecked Sendable, Hashable, PublishedWrapper {
     @Atomic private var value: Value
     private var ignoreEquality: Bool
     var objectWillChange: WeakObservableObjectPublisher?

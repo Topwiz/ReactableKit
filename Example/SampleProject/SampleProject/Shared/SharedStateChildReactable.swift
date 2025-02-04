@@ -17,7 +17,7 @@ final class SharedStateChildReactable: Reactable {
         case parentAction(Int)
     }
     
-    struct Drawable: Equatable, Hashable {
+    struct Drawable: Hashable {
         var username: String = ""
     }
     

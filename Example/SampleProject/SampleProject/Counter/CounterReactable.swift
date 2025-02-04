@@ -19,7 +19,7 @@ final class CounterReactable: Reactable {
     
     struct State: PathState {
         @ViewState var count: Int = 1
-        @ViewState(disableCheckingEquatable: true) var count1: Int = 1
+        @ViewState(ignoreEquality: true) var count1: Int = 1
     }
     
     enum Mutation {
