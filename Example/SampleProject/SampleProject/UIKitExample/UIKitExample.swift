@@ -13,14 +13,17 @@ final class UIKitExampleReactable: Reactable {
     
     enum Action {
         case changeTitle
+        case updateEmit
     }
     
     enum Mutation {
         case setTitle(String)
+        case setEmit
     }
     
     struct State: PathState {
         var title: String = ""
+        @Emit var emitTest: Bool = false
     }
     
     var initialState: State = .init()
@@ -29,6 +32,9 @@ final class UIKitExampleReactable: Reactable {
         switch action {
         case .changeTitle:
             return .just(.setTitle(randomString(length: 5)))
+            
+        case .updateEmit:
+            return .just(.setEmit)
         }
     }
     
@@ -36,6 +42,9 @@ final class UIKitExampleReactable: Reactable {
         switch mutate {
         case let .setTitle(title):
             state.title = title
+            
+        case .setEmit:
+            state.emitTest = state.emitTest
         }
     }
 
@@ -49,22 +58,30 @@ final class UIKitView: UIView {
     
     let titleLabel = UILabel()
     let button = UIButton()
+    let emitButton = UIButton()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         self.addSubview(self.titleLabel)
         self.addSubview(self.button)
+        self.addSubview(self.emitButton)
         self.titleLabel.translatesAutoresizingMaskIntoConstraints = false
         self.button.translatesAutoresizingMaskIntoConstraints = false
+        self.emitButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             self.titleLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor),
             self.titleLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             self.button.topAnchor.constraint(equalTo: self.titleLabel.bottomAnchor, constant: 20),
             self.button.centerXAnchor.constraint(equalTo: self.centerXAnchor),
+            self.emitButton.topAnchor.constraint(equalTo: self.button.bottomAnchor, constant: 20),
+            self.emitButton.centerXAnchor.constraint(equalTo: self.centerXAnchor),
         ])
         self.button.setTitleColor(.black, for: .normal)
         self.button.setTitle("Change Title", for: .normal)
         self.button.addTarget(self, action: #selector(self.buttonTapped), for: .touchUpInside)
+        self.emitButton.setTitleColor(.black, for: .normal)
+        self.emitButton.setTitle("Emit Test", for: .normal)
+        self.emitButton.addTarget(self, action: #selector(self.emitButtonTapped), for: .touchUpInside)
         self.bind()
     }
     
@@ -76,6 +93,10 @@ final class UIKitView: UIView {
         self.reactable.action(.changeTitle)
     }
     
+    @objc func emitButtonTapped() {
+        self.reactable.action(.updateEmit)
+    }
+    
     func bind() {
         
         self.reactable.state.map { $0.title }
@@ -84,6 +105,14 @@ final class UIKitView: UIView {
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] title in
                 self?.titleLabel.text = title
+            })
+            .store(in: &self.cancellables)
+        
+        self.reactable.emit(\.$emitTest)
+            .debug()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] value in
+                print("$emitTest: \(value)")
             })
             .store(in: &self.cancellables)
     }

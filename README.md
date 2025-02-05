@@ -184,26 +184,49 @@ struct State {
 
 > ⚠️ `@Shared` does not automatically update the UI when values change.
 
+#### 📦 Using `@Emit` for State Tracking
+`@Emit` ensures that **even if the value is set to the same value, it will still trigger updates**.
+
+#### 📌 Using `@Emit` in State
+
+```swift
+struct MyState {
+    @Emit var title: String = "Hello"
+}
+```
+
+#### 📌 Subscribing to `emit(_:)`
+
+```swift
+reactable.emit(\ .$title)
+    .sink { newValue in
+        print("Title updated:", newValue)
+    }
+    .store(in: &cancellables)
+```
+
+
+
 ### 2️⃣ `ObservableEvent` (Child → Parent Communication)
 
 `ObservableEvent` enables **child components to send actions to parent components**.
 
 ```swift
 // Child Reactable
-class ChildReactable: Reactable { 
-    enum Action: ObservableEvent {
+class ChildReactable: Reactable, ObservableEvent { 
+    enum Action {
         case notifyParent(Int)
     }
 }
 
 // Parent Reactable
 func transformAction() -> AnyPublisher<Action, Never> {
-    let childEvent = ChildReactable.Action.observe()
-        .filter {
-            if case .notifyParent = $0 { return true }
+    let childEvent = ChildReactable.observe() // observe's ChildReactable Action and changed State
+        .filter { result in
+            if case .notifyParent = result.action { return true }
             return false
         }
-        .map(Action.notifyParent)
+        .map(Action.parentAction)
         .eraseToAnyPublisher()
     
     return .merge([
