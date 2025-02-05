@@ -15,7 +15,7 @@ final class SharedStateReactable: Reactable {
         case changeData
         case removeAllData
         case sharedStateChanged(SharedState)
-        case childAction(SharedStateChildReactable.Action)
+        case childAction(ObservableEventResult<SharedStateChildReactable>)
     }
     
     struct Drawable: Equatable, Hashable {
@@ -95,9 +95,9 @@ final class SharedStateReactable: Reactable {
     }
     
     func transformAction() -> AnyPublisher<Action, Never> {
-        let childEvent = SharedStateChildReactable.Action.observe()
-            .filter {
-                if case .parentAction = $0 { return true }
+        let childEvent = SharedStateChildReactable.observe()
+            .filter { result in
+                if case .change = result.action { return true }
                 return false
             }
             .map(Action.childAction)

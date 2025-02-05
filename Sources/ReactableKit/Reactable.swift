@@ -77,52 +77,51 @@ public extension Reactable {
 }
 
 public extension Reactable {
-    
-    private func sendGlobalActionIfNeeded(_ action: Action) {
-        let key = String(describing: Action.self)
-        guard let event = action as? any ObservableEvent else { return }
-        send(event)
-        func send<T: ObservableEvent>(_ action: T) {
-            T.send(action)
+
+    func action(_ action: Action) {
+        self.dispatch(action: action) { [weak self] result in
+            guard let self else { return }
+            if let state = result.output {
+                self.sendGlobalActionIfNeeded(action, state: state)
+            }
         }
     }
     
-    func action(_ action: Action) {
-        self.dispatch(action: action) { _ in }
-        self.sendGlobalActionIfNeeded(action)
-    }
-    
     func action(_ action: Action, completion: @escaping (Result<State, Error>) -> Void) {
-        self.dispatch(action: action, completion: completion)
-        self.sendGlobalActionIfNeeded(action)
+        self.dispatch(action: action) { [weak self] result in
+            guard let self else { return }
+            completion(result)
+            if let state = result.output {
+                self.sendGlobalActionIfNeeded(action, state: state)
+            }
+        }
     }
     
     @discardableResult
     func action(_ action: Action) async throws -> State {
         return try await withUnsafeThrowingContinuation { [unowned self] continuation in
-            self.dispatch(action: action) { result in
+            self.dispatch(action: action) { [weak self] result in
+                guard let self else { return }
                 switch result {
                 case .success(let state):
                     continuation.resume(returning: state)
+                    self.sendGlobalActionIfNeeded(action, state: result.output ?? self.initialState)
                 case let .failure(error):
                     continuation.resume(throwing: error)
                 }
             }
-            self.sendGlobalActionIfNeeded(action)
         }
     }
     
     func actionPublish(_ action: Action) -> AnyPublisher<State, Never> {
         Future { [unowned self] promise in
-            self.dispatch(action: action) { result in
-                switch result {
-                case .success(let state):
+            self.dispatch(action: action) { [weak self] result in
+                guard let self else { return }
+                if let state = result.output {
                     promise(.success(state))
-                case .failure:
-                    break
+                    self.sendGlobalActionIfNeeded(action, state: state)
                 }
             }
-            self.sendGlobalActionIfNeeded(action)
         }
         .eraseToAnyPublisher()
     }

@@ -9,9 +9,9 @@ import Foundation
 import ReactableKit
 import Combine
 
-final class SharedStateChildReactable: Reactable {
+final class SharedStateChildReactable: Reactable, ObservableEvent {
     
-    enum Action: ObservableEvent {
+    enum Action {
         case sharedStateUpdated(SharedStateReactable.SharedState)
         case change
         case parentAction(Int)
