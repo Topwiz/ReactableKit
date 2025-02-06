@@ -18,23 +18,21 @@ final class SharedStateReactable: Reactable {
         case childAction(ObservableEventResult<SharedStateChildReactable>)
     }
     
-    struct Drawable: Equatable, Hashable {
+    struct Drawable: Equatable {
         var username: String = ""
         var age: Int = 0
         var isPremium: Bool = false
     }
     
-    struct SharedState: Codable, Hashable {
+    struct SharedState: Codable, Equatable {
         var username: String = ""
         var age: Int = 0
         var isPremium: Bool = false
     }
     
     struct State: PathState {
-//        @Shared(.userDefaults()) var username = "Guest"
-//        @Shared(.file()) var age = 0
 //        @Shared(.memory) var isPremium = false
-        @Shared(.file()) var sharedState = SharedState()
+        @SharedCodable(.file()) var sharedState = SharedState()
         
         @ViewState var drawable: Drawable = .init()
     }
@@ -82,7 +80,7 @@ final class SharedStateReactable: Reactable {
     func reduce(state: inout State, mutate: Mutation) {
         switch mutate {
         case .removeSharedState:
-            state.$sharedState.remove()
+            state.$sharedState.removeFromStorage()
             state.sharedState = SharedState()
             
         case let .setSharedState(value):

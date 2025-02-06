@@ -165,24 +165,25 @@ struct State {
 }
 ```
 
-#### 🔄 `@Shared`
+#### 🔄 `@Shared`, `@SharedCodable`
 
-`@Shared` enables **state sharing** between **parent and child components**.
+@Shared`, `@SharedCodable` enables **state sharing** between **parent and child components**.
 
 ```swift
-struct SharedState: Codable, Equatable, Hashable {
+struct SharedState: Codable, Equatable {
     var username: String = ""
     var age: Int = 0
     var isPremium: Bool = false
 }
 
 struct State {
-    @Shared(.memory) var sharedState = SharedState()
+    @SharedCodable(.file()) var sharedState = SharedState()
+    @Shared var sharedState = SharedState()
     @ViewState var displayInfo: String = ""
 }
 ```
 
-> ⚠️ `@Shared` does not automatically update the UI when values change.
+> ⚠️ `@Shared`, `@SharedCodable` does not automatically update the UI when values change.
 
 #### 📦 Using `@Emit` for State Tracking
 `@Emit` ensures that **even if the value is set to the same value, it will still trigger updates**.

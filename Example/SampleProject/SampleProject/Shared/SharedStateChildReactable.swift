@@ -17,12 +17,12 @@ final class SharedStateChildReactable: Reactable, ObservableEvent {
         case parentAction(Int)
     }
     
-    struct Drawable: Hashable {
+    struct Drawable: Equatable {
         var username: String = ""
     }
     
     struct State: PathState {
-        @Shared(.file()) var sharedState = SharedStateReactable.SharedState()
+        @SharedCodable(.file()) var sharedState = SharedStateReactable.SharedState()
         @ViewState var name: String = ""
         var index: Int = 0
     }
