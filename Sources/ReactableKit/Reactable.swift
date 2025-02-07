@@ -162,11 +162,10 @@ public extension Reactable {
     }
     
     func registerTransform() {
-        guard !isTransformRegistered else { return }
-        isTransformRegistered = true
+        guard !self.isTransformRegistered else { return }
+        self.isTransformRegistered = true
         
-        let transformedActions = transformAction()
-            .catch { _ in Empty<Action, Never>() }
+        let transformedActions = self.transformAction()
             .receive(on: self.queue)
             .share()
         
@@ -176,7 +175,6 @@ public extension Reactable {
                     return Empty<Mutation, Never>().eraseToAnyPublisher()
                 }
                 return self.mutate(action: action)
-                    .catch { _ in Empty() }
                     .eraseToAnyPublisher()
             }
         
@@ -197,10 +195,10 @@ public extension Reactable {
     
     var isTransformRegistered: Bool {
         get {
-            objc_getAssociatedObject(self, isTransformRegisteredKey) as? Bool ?? false
+            objc_getAssociatedObject(self, self.isTransformRegisteredKey) as? Bool ?? false
         }
         set {
-            objc_setAssociatedObject(self, isTransformRegisteredKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, self.isTransformRegisteredKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
 }

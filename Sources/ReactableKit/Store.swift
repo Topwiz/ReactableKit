@@ -59,18 +59,21 @@ public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
         self.reactable.action(action, completion: completion)
     }
     
-    public func binding<Value: Sendable>(
-        _ binding: Binding<Value>,
-        action actionGenerator: @Sendable @escaping (Value) -> R.Action
-    ) -> Binding<Value> where Value: Equatable {
+    public func binding<Value: Equatable>(
+        _ keyPath: WritableKeyPath<R.State, Value>,
+        action actionGenerator: (@Sendable (Value) -> R.Action)? = nil
+    ) -> Binding<Value> {
         Binding(
-            get: { binding.wrappedValue },
-            set: { [weak self] newValue in
-                guard let self = self, binding.wrappedValue != newValue else { return }
-                binding.wrappedValue = newValue
-                let action = actionGenerator(newValue)
-                self.reactable.action(action)
+            get: { self.state[keyPath: keyPath] },
+            set: { newValue in
+                guard self.state[keyPath: keyPath] != newValue else { return }
+                self.state[keyPath: keyPath] = newValue
+                if let action = actionGenerator?(newValue) {
+                    self.reactable.action(action)
+                }
             }
         )
     }
 }
+
+extension KeyPath: @unchecked Sendable {}

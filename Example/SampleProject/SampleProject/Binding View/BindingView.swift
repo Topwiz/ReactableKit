@@ -13,12 +13,9 @@ struct BindingView: View {
     var body: some View {
         VStack {
             Toggle(
-                isOn: self.store.binding(
-                    self.$store.state.isOn1,
-                    action: { _ in
-                        .isOnChanged
-                    }
-                )
+                isOn: self.store.binding(\.isOn1) { _ in
+                    .isOnChanged
+                }
             ) {
                 Text("Toggle 1")
             }
@@ -30,7 +27,7 @@ struct BindingView: View {
             }
             
             HStack {
-                Slider(value: self.$store.state.slider)
+                Slider(value: self.store.binding(\.slider))
                 
                 Text("\(self.store.state.slider)")
             }
