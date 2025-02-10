@@ -57,6 +57,7 @@ final class SharedStateReactable: Reactable {
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         switch action {
         case let .sharedStateChanged(value):
+            print("sharedStateChanged: \(value)")
             return .just(.updateDrawable)
             
         case .removeAllData:
@@ -72,7 +73,7 @@ final class SharedStateReactable: Reactable {
             ])
             
         case let .childAction(action):
-            print("childAction: \(action)")
+            print("childAction state: \(action.state)")
             return .empty()
         }
     }

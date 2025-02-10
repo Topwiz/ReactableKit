@@ -20,7 +20,7 @@ public enum StorageType: Hashable {
 // MARK: - @Shared (Unified)
 
 @propertyWrapper
-public struct Shared<Value: Equatable> {
+public struct Shared<Value: Equatable>: CustomStringConvertible {
     private let key: String
     private let storage: StorageType
     private let subject: CurrentValueSubject<Value, Never>
@@ -35,6 +35,10 @@ public struct Shared<Value: Equatable> {
     }
     
     public var projectedValue: Shared<Value> { self }
+    
+    public var description: String {
+        "\(self.wrappedValue)"
+    }
     
     public var publisher: AnyPublisher<Value, Never> { subject.eraseToAnyPublisher() }
     

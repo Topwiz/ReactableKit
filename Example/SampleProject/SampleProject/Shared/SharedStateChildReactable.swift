@@ -14,7 +14,6 @@ final class SharedStateChildReactable: Reactable, ObservableEvent {
     enum Action {
         case sharedStateUpdated(SharedStateReactable.SharedState)
         case change
-        case parentAction(Int)
     }
     
     struct Drawable: Equatable {
@@ -44,6 +43,7 @@ final class SharedStateChildReactable: Reactable, ObservableEvent {
         case .change:
             self.cancelTask.send(.test)
             return .concat([
+                .just(.setSharedName(randomString(length: 5))),
                 .empty().delay(for: 3, scheduler: queue),
                 .just(.setSharedName(randomString(length: 5)))
             ])
@@ -51,9 +51,6 @@ final class SharedStateChildReactable: Reactable, ObservableEvent {
             
         case let .sharedStateUpdated(value):
             return .just(.setName(value.username))
-            
-        case .parentAction:
-            return .empty()
         }
     }
     
@@ -71,7 +68,7 @@ final class SharedStateChildReactable: Reactable, ObservableEvent {
         return .merge([
             self.currentState.$sharedState.publisher
                 .map(Action.sharedStateUpdated)
-                .eraseToAnyPublisher()
+                .eraseToAnyPublisher(),
         ])
     }
 

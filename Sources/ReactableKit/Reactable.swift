@@ -26,7 +26,7 @@ public protocol Reactable: AnyObject, IdentityHashable {
     var queue: DispatchQueue { get set }
     var cancellables: Set<AnyCancellable> { get set }
     
-    func action(_ action: Action) async throws -> State
+    func action(_ action: Action) async -> State
     func mutate(action: Action) -> AnyPublisher<Mutation, Never>
     func reduce(state: inout State, mutate: Mutation)
     func registerTransform()
@@ -69,10 +69,13 @@ public extension Reactable {
     }
     
     internal func setState(_ state: State) {
+        WeakCache.currentState.setValue(state, forKey: self)
+    }
+    
+    internal func sendObservableEvent(state: State) {
         if let subject = WeakCache.state.value(forKey: self) as? CurrentValueSubject<State, Never> {
             subject.send(state)
         }
-        WeakCache.currentState.setValue(state, forKey: self)
     }
 }
 
@@ -87,7 +90,7 @@ public extension Reactable {
         }
     }
     
-    func action(_ action: Action, completion: @escaping (Result<State, Error>) -> Void) {
+    func action(_ action: Action, completion: @escaping (Result<State, Never>) -> Void) {
         self.dispatch(action: action) { [weak self] result in
             guard let self else { return }
             completion(result)
@@ -98,8 +101,8 @@ public extension Reactable {
     }
     
     @discardableResult
-    func action(_ action: Action) async throws -> State {
-        return try await withUnsafeThrowingContinuation { [unowned self] continuation in
+    func action(_ action: Action) async -> State {
+        return try await withUnsafeContinuation { [unowned self] continuation in
             self.dispatch(action: action) { [weak self] result in
                 guard let self else { return }
                 switch result {
@@ -126,33 +129,29 @@ public extension Reactable {
         .eraseToAnyPublisher()
     }
     
-    internal func dispatch(action: Action, completion: @escaping (Result<State, Error>) -> Void) {
+    internal func dispatch(action: Action, completion: @escaping (Result<State, Never>) -> Void) {
         var cancellable: AnyCancellable? = nil
         
         cancellable = self.mutate(action: action)
             .subscribe(on: self.queue)
             .receive(on: self.queue)
-            .collect()
-            .flatMap { mutations -> AnyPublisher<State, Never> in
-                var currentState = self.currentState
-                
-                mutations.forEach { mutation in
-                    self.reduce(state: &currentState, mutate: mutation)
-                }
-                
-                self.setState(currentState)
-                return Just(currentState).eraseToAnyPublisher()
+            .scan(self.currentState) { [weak self] currentState, mutation -> State in
+                guard let self else { return currentState }
+                var newState = currentState
+                self.reduce(state: &newState, mutate: mutation)
+                self.setState(newState)
+                return newState
             }
+            .last()
             .sink(
                 receiveCompletion: { [weak self] completionResult in
                     guard let self, let cancellable else { return }
-                    if case .failure = completionResult {
-                        completion(.failure(NSError()))
-                    }
                     self.cancellables.remove(cancellable)
                 },
-                receiveValue: { finalState in
+                receiveValue: { [weak self] finalState in
+                    guard let self else { return }
                     completion(.success(finalState))
+                    self.sendObservableEvent(state: finalState)
                 }
             )
         
@@ -200,11 +199,5 @@ public extension Reactable {
         set {
             objc_setAssociatedObject(self, self.isTransformRegisteredKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
-    }
-}
-
-public extension AnyCancellable {
-    func store(in cancellables: inout Set<AnyCancellable>) {
-        cancellables.insert(self)
     }
 }

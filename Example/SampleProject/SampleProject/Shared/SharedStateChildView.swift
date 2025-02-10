@@ -17,8 +17,10 @@ struct SharedStateChildView: View {
             Text("UserName: \(self.store.state.name)")
             
             Button {
-                self.store.action(.change)
-                self.store.action(.parentAction(self.store.state.index))
+                Task {
+                    let t = await self.store.action(.change)
+                    print("task result: \(t)")
+                }
             } label: {
                 Text("Change")
             }

@@ -8,7 +8,7 @@
 import Foundation
 
 @propertyWrapper
-public struct Emit<Value> {
+public struct Emit<Value>: CustomStringConvertible {
     
     public var value: Value {
         didSet {
@@ -31,8 +31,18 @@ public struct Emit<Value> {
         self
     }
     
+    public var description: String {
+        "\(self.wrappedValue)"
+    }
+    
     private mutating func increaseCount() {
         self.count &+= 1
+    }
+}
+
+extension Emit: Equatable where Value: Equatable {
+    public static func == (lhs: Emit<Value>, rhs: Emit<Value>) -> Bool {
+        lhs.wrappedValue == rhs.wrappedValue
     }
 }
 

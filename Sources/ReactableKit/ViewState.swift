@@ -15,7 +15,7 @@ protocol PublishedWrapper {
 }
 
 @propertyWrapper
-public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, PublishedWrapper {
+public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, PublishedWrapper, CustomStringConvertible {
     @Atomic private var value: Value
     private var ignoreEquality: Bool
     var objectWillChange: WeakObservableObjectPublisher?
@@ -36,6 +36,10 @@ public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, Publis
             get: { self.value },
             set: { self.value = $0 }
         )
+    }
+    
+    public var description: String {
+        "\(self.wrappedValue)"
     }
     
     func update() {

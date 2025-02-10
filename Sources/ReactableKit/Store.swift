@@ -51,15 +51,15 @@ public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
     }
     
     @discardableResult
-    public func action(_ action: R.Action) async throws -> R.State {
-        return try await self.reactable.action(action)
+    public func action(_ action: R.Action) async -> R.State {
+        return await self.reactable.action(action)
     }
     
     public func action(_ action: R.Action) {
         self.reactable.action(action)
     }
     
-    public func action(_ action: R.Action, completion: @escaping (Result<R.State, Error>) -> Void) {
+    public func action(_ action: R.Action, completion: @escaping (Result<R.State, Never>) -> Void) {
         self.reactable.action(action, completion: completion)
     }
     
