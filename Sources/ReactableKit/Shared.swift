@@ -13,67 +13,17 @@ import Combine
 
 public enum StorageType: Hashable {
     case userDefaults(UserDefaults = .standard)
-    case file(directory: FileManager.SearchPathDirectory = .documentDirectory)
+    case file(directory: FileManager.SearchPathDirectory = .documentDirectory, path: String? = nil)
     case memory
 }
 
-// MARK: - Shared Protocol
-
-protocol SharedProtocol {
-    associatedtype Value
-    var key: String { get }
-    var storage: StorageType { get }
-    var subject: CurrentValueSubject<Value, Never> { get }
-    var publisher: AnyPublisher<Value, Never> { get }
-    var value: Value { get }
-}
-
-// MARK: - @Shared
+// MARK: - @Shared (Unified)
 
 @propertyWrapper
-public struct Shared<Value: Equatable>: SharedProtocol {
-    let key: String
-    let storage: StorageType
-    let subject: CurrentValueSubject<Value, Never>
-    var value: Value { subject.value }
-    
-    public var wrappedValue: Value {
-        get { subject.value }
-        set {
-            guard newValue != wrappedValue else { return }
-            subject.send(newValue)
-        }
-    }
-    
-    public var projectedValue: Shared<Value> { self }
-    
-    public var publisher: AnyPublisher<Value, Never> { subject.eraseToAnyPublisher() }
-    
-    public init(wrappedValue defaultValue: Value, key: String? = nil) {
-        let prefix = "reactable_shared"
-        let inferredKey = key ?? "\(prefix)_\(String(reflecting: Value.self))"
-        
-        self.key = inferredKey
-        self.storage = .memory
-        
-        if let existingSubject = MemoryStorage.shared.get(forKey: inferredKey) as? CurrentValueSubject<Value, Never> {
-            self.subject = existingSubject
-        } else {
-            let newSubject = CurrentValueSubject<Value, Never>(defaultValue)
-            MemoryStorage.shared.set(newSubject, forKey: inferredKey)
-            self.subject = newSubject
-        }
-    }
-}
-
-// MARK: - @SharedCodable
-
-@propertyWrapper
-public struct SharedCodable<Value: Codable & Equatable>: SharedProtocol {
-    let key: String
-    let storage: StorageType
-    let subject: CurrentValueSubject<Value, Never>
-    var value: Value { subject.value }
+public struct Shared<Value: Equatable> {
+    private let key: String
+    private let storage: StorageType
+    private let subject: CurrentValueSubject<Value, Never>
     
     public var wrappedValue: Value {
         get { subject.value }
@@ -84,40 +34,55 @@ public struct SharedCodable<Value: Codable & Equatable>: SharedProtocol {
         }
     }
     
-    public var projectedValue: SharedCodable<Value> { self }
+    public var projectedValue: Shared<Value> { self }
     
-    public var publisher: AnyPublisher<Value, Never> { self.subject.eraseToAnyPublisher() }
+    public var publisher: AnyPublisher<Value, Never> { subject.eraseToAnyPublisher() }
     
-    public init(wrappedValue defaultValue: Value, _ storage: StorageType, key: String? = nil) {
-        guard storage != .memory else {
-            fatalError("SharedCodable can not be used with MemoryStorage. Use @Shared property wrapper.")
-        }
-        
+    public init(wrappedValue defaultValue: Value, _ storage: StorageType = .memory, key: String? = nil) {
         let prefix = "reactable_shared"
         let inferredKey = key ?? "\(prefix)_\(String(reflecting: Value.self))"
+
+        if (storage == .file() || storage == .userDefaults()) && !(defaultValue is Codable) {
+            fatalError("❌ Value must conform to Codable when using .file or .userDefaults storage.")
+        }
         
         self.key = inferredKey
         self.storage = storage
+        
         if let existingSubject = MemoryStorage.shared.get(forKey: inferredKey) as? CurrentValueSubject<Value, Never> {
             self.subject = existingSubject
         } else {
-            let storageValue = Self.loadFromStorage(storage: storage, key: inferredKey, defaultValue: defaultValue)
-            let newSubject = CurrentValueSubject<Value, Never>(storageValue)
+            let storedValue = Self.loadFromStorage(storage: storage, key: inferredKey, defaultValue: defaultValue)
+            let newSubject = CurrentValueSubject<Value, Never>(storedValue)
             MemoryStorage.shared.set(newSubject, forKey: inferredKey)
             self.subject = newSubject
         }
     }
     
-    func saveToStorage(_ value: Value) {
+    // MARK: - Storage Handling
+
+    private func saveToStorage(_ value: Value) {
         switch storage {
         case let .userDefaults(userDefaults):
-            let encoded = try? JSONEncoder().encode(value)
+            guard let encodableValue = value as? Codable else {
+                fatalError("❌ Value must conform to Codable when using .userDefaults storage.")
+            }
+            let encoded = try? JSONEncoder().encode(encodableValue)
             userDefaults.set(encoded, forKey: key)
 
-        case let .file(directory):
-            guard let url = Self.getFileURL(directory: directory, key: key) else { return }
-            let encoded = try? JSONEncoder().encode(value)
-            try? encoded?.write(to: url)
+        case let .file(directory, path):
+            guard let encodableValue = value as? Codable else {
+                fatalError("❌ Value must conform to Codable when using .file storage.")
+            }
+            guard let url = Self.getFileURL(directory: directory, path: path, key: key) else { return }
+            let encoded = try? JSONEncoder().encode(encodableValue)
+
+            do {
+                try Self.createFolderIfNeeded(for: url)
+                try encoded?.write(to: url)
+            } catch {
+                print("❌ Failed to save file: \(error.localizedDescription)")
+            }
 
         default: break
         }
@@ -128,56 +93,79 @@ public struct SharedCodable<Value: Codable & Equatable>: SharedProtocol {
         case let .userDefaults(userDefaults):
             userDefaults.removeObject(forKey: key)
 
-        case let .file(directory):
-            guard let url = Self.getFileURL(directory: directory, key: key) else { return }
-            try? FileManager.default.removeItem(at: url)
+        case let .file(directory, path):
+            guard let url = Self.getFileURL(directory: directory, path: path, key: key) else { return }
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch {
+                print("❌ Failed to remove file: \(error.localizedDescription)")
+            }
 
         default: break
         }
     }
 
-    static func loadFromStorage(storage: StorageType, key: String?, defaultValue: Value) -> Value {
+    private static func loadFromStorage(storage: StorageType, key: String?, defaultValue: Value) -> Value {
         guard let key else { return defaultValue }
+
         switch storage {
         case let .userDefaults(userDefaults):
-            guard let data = userDefaults.data(forKey: key),
-                  let decoded = try? JSONDecoder().decode(Value.self, from: data) else { return defaultValue }
-            return decoded
+            guard let data = userDefaults.data(forKey: key) else {
+                return userDefaults.object(forKey: key) as? Value ?? defaultValue
+            }
+            guard let codableDefault = defaultValue as? Codable else {
+                fatalError("❌ Value must conform to Codable when using .userDefaults storage.")
+            }
+            return decode(data, defaultValue: codableDefault) as? Value ?? defaultValue
 
-        case let .file(directory):
-            guard let url = Self.getFileURL(directory: directory, key: key),
-                  let data = try? Data(contentsOf: url),
-                  let decoded = try? JSONDecoder().decode(Value.self, from: data) else { return defaultValue }
-            return decoded
+        case let .file(directory, path):
+            guard let url = Self.getFileURL(directory: directory, path: path, key: key),
+                  let data = try? Data(contentsOf: url) else {
+                return defaultValue
+            }
+            guard let codableDefault = defaultValue as? Codable else {
+                fatalError("❌ Value must conform to Codable when using .file storage.")
+            }
+            return decode(data, defaultValue: codableDefault) as? Value ?? defaultValue
 
         default:
             return defaultValue
         }
     }
 
-    static func getFileURL(directory: FileManager.SearchPathDirectory, key: String) -> URL? {
+    private static func decode<T: Codable>(_ data: Data, defaultValue: T) -> T {
+        guard let decoded = try? JSONDecoder().decode(T.self, from: data) else {
+            return defaultValue
+        }
+        return decoded
+    }
+
+    private static func createFolderIfNeeded(for fileURL: URL) throws {
+        let folderURL = fileURL.deletingLastPathComponent()
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: folderURL.path) {
+            try fileManager.createDirectory(at: folderURL, withIntermediateDirectories: true, attributes: nil)
+        }
+    }
+
+    private static func getFileURL(directory: FileManager.SearchPathDirectory, path: String?, key: String) -> URL? {
         let fileManager = FileManager.default
         guard let directoryURL = fileManager.urls(for: directory, in: .userDomainMask).first else {
             return nil
         }
 
-        let folderURL = directoryURL.appendingPathComponent("Reactable")
-        let fileURL = folderURL.appendingPathComponent("\(key).json")
-
-        if !fileManager.fileExists(atPath: folderURL.path) {
-            do {
-                try fileManager.createDirectory(at: folderURL, withIntermediateDirectories: true, attributes: nil)
-            } catch {
-                print("❌ Failed: \(error.localizedDescription)")
-                return nil
-            }
+        var folderURL = directoryURL
+        if let path = path {
+            folderURL = folderURL.appendingPathComponent(path)
+        } else {
+            folderURL = folderURL.appendingPathComponent("Reactable")
         }
 
-        return fileURL
+        return folderURL.appendingPathComponent("\(key).json")
     }
 }
 
-// MARK: - Memory Storage
+// MARK: - Memory Storage (Singleton)
 
 final class MemoryStorage {
     nonisolated(unsafe) static let shared = MemoryStorage()

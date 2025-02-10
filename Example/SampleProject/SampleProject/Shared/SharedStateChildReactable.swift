@@ -22,7 +22,7 @@ final class SharedStateChildReactable: Reactable, ObservableEvent {
     }
     
     struct State: PathState {
-        @SharedCodable(.file()) var sharedState = SharedStateReactable.SharedState()
+        @Shared(.file()) var sharedState = SharedStateReactable.SharedState()
         @ViewState var name: String = ""
         var index: Int = 0
     }

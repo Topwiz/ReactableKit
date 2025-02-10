@@ -31,9 +31,9 @@ final class SharedStateReactable: Reactable {
     }
     
     struct State: PathState {
-//        @Shared(.memory) var isPremium = false
-        @SharedCodable(.file()) var sharedState = SharedState()
-        
+        @Shared(.memory) var isPremium = false
+        @Shared(.file(path: "testing/")) var sharedState = SharedState()
+        @Shared(.file(path: "testing/")) var bool = false
         @ViewState var drawable: Drawable = .init()
     }
     
@@ -84,6 +84,7 @@ final class SharedStateReactable: Reactable {
             state.sharedState = SharedState()
             
         case let .setSharedState(value):
+            state.bool = !state.bool
             state.sharedState = value
             
         case .updateDrawable:
