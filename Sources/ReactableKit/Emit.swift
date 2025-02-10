@@ -45,3 +45,13 @@ extension Reactable {
             .eraseToAnyPublisher()
     }
 }
+
+extension Store {
+    public func emit<T>(_ keyPath: KeyPath<R.State, Emit<T>>) -> AnyPublisher<T, Never> {
+        self.publisher
+            .map { $0[keyPath: keyPath] }
+            .removeDuplicates { $0.count == $1.count }
+            .map(\.wrappedValue)
+            .eraseToAnyPublisher()
+    }
+}

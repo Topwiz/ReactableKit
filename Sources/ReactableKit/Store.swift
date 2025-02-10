@@ -36,6 +36,10 @@ public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
         self.reactable.registerTransform()
     }
     
+    public var publisher: AnyPublisher<R.State, Never> {
+        self.reactable.state
+    }
+    
     private func setup() {
         let mirror = Mirror(reflecting: self.reactable.currentState)
         
