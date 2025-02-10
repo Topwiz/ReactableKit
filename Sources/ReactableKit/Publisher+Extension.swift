@@ -126,6 +126,17 @@ public extension Publisher {
         self.removeDuplicates()
             .eraseToAnyPublisher()
     }
+    
+    func withIndex() -> AnyPublisher<(index: Int, value: Output), Failure> {
+        self.scan((index: -1, value: nil as Output?)) { (acc, value) in
+            (index: acc.index + 1, value: value)
+        }
+        .compactMap { (index, value) -> (index: Int, value: Output)? in
+            guard let value = value else { return nil }
+            return (index, value)
+        }
+        .eraseToAnyPublisher()
+    }
 }
 
 // MARK: - Data Transformation Operators
