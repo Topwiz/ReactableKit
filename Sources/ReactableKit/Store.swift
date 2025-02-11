@@ -65,14 +65,15 @@ public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
     
     public func binding<Value: Equatable>(
         _ keyPath: WritableKeyPath<R.State, Value>,
-        action actionGenerator: (@Sendable (Value) -> R.Action)? = nil
+        action actionGenerator: (@Sendable (BindingValue<Value>) -> R.Action)? = nil
     ) -> Binding<Value> {
         Binding(
             get: { self.state[keyPath: keyPath] },
             set: { newValue in
                 guard self.state[keyPath: keyPath] != newValue else { return }
+                let oldValue = self.state[keyPath: keyPath]
                 self.state[keyPath: keyPath] = newValue
-                if let action = actionGenerator?(newValue) {
+                if let action = actionGenerator?(BindingValue(old: oldValue, new: newValue)) {
                     self.reactable.action(action)
                 }
             }
@@ -81,3 +82,8 @@ public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
 }
 
 extension KeyPath: @unchecked Sendable {}
+
+public struct BindingValue<Value: Equatable> {
+    public let old: Value
+    public let new: Value
+}

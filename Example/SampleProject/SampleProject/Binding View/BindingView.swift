@@ -13,8 +13,9 @@ struct BindingView: View {
     var body: some View {
         VStack {
             Toggle(
-                isOn: self.store.binding(\.isOn1) { _ in
-                    .isOnChanged
+                isOn: self.store.binding(\.isOn1) { value in
+                    print("value: \(value)")
+                    return .isOnChanged
                 }
             ) {
                 Text("Toggle 1")
