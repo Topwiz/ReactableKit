@@ -18,7 +18,7 @@ final class NavigationStackReactable: Reactable {
     
     struct State {
         @ViewState var path: ReactablePath = .init()
-        var storedCounter = CounterReactable.State()
+        var counterReactable = CounterReactable()
     }
     
     enum Mutation {
@@ -30,7 +30,7 @@ final class NavigationStackReactable: Reactable {
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         switch action {
         case .pushCounter:
-            return .just(.push(CounterReactable.State()))
+            return .just(.push(self.currentState.counterReactable))
         }
     }
     

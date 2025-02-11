@@ -9,7 +9,7 @@ import Foundation
 import ReactableKit
 import Combine
 
-final class CounterReactable: Reactable {
+final class CounterReactable: Reactable, PathState {
     
     enum Action {
         case increase
@@ -17,7 +17,7 @@ final class CounterReactable: Reactable {
         case multiply(Int)
     }
     
-    struct State: PathState {
+    struct State {
         @ViewState var count: Int = 1
         @ViewState(ignoreEquality: true) var count1: Int = 1
     }

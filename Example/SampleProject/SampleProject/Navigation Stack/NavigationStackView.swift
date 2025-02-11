@@ -20,34 +20,34 @@ struct NavigationStackView: View {
                     Text("New Counter")
                 }
                 
-                NavigationLink(state: self.store.state.storedCounter) {
+                NavigationLink(reactable: self.store.state.counterReactable) {
                     Text("Stored Counter")
                 }
                 
-                NavigationLink(state: BindingReactable.State()) {
+                NavigationLink(reactable: BindingReactable()) {
                     Text("[NavigationLink] Binding")
                 }
                 
-                NavigationLink(state: SharedStateReactable.State()) {
+                NavigationLink(reactable: SharedStateReactable()) {
                     Text("[NavigationLink] SharedStateReactable")
                 }
                 
-                NavigationLink(state: UIKitExampleReactable.State()) {
+                NavigationLink(reactable: UIKitExampleReactable()) {
                     Text("[NavigationLink] UIKitExample")
                 }
             }
         } destination: { state in
             switch state {
-            case let state as CounterReactable.State:
-                CounterView(store: Store(.init(state: state)))
+            case let reactable as CounterReactable:
+                CounterView(store: Store(reactable))
                 
-            case let state as BindingReactable.State:
-                BindingView(store: Store(.init(state: state)))
+            case let reactable as BindingReactable:
+                BindingView(store: Store(reactable))
                 
-            case let state as SharedStateReactable.State:
-                SharedStateView(store: Store(.init(state: state)))
+            case let reactable as SharedStateReactable:
+                SharedStateView(store: Store(reactable))
             
-            case let state as UIKitExampleReactable.State:
+            case let reactable as UIKitExampleReactable:
                 SwiftUIUIView()
                 
             default:

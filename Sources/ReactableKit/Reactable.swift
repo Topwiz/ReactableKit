@@ -36,12 +36,7 @@ public protocol Reactable: AnyObject, IdentityHashable {
 public extension Reactable {
     
     var state: AnyPublisher<State, Never> {
-        if let existingSubject = WeakCache.state.value(forKey: self) as? CurrentValueSubject<State, Never> {
-            return existingSubject.eraseToAnyPublisher()
-        }
-        let newSubject = CurrentValueSubject<State, Never>(self.currentState)
-        WeakCache.state.setValue(newSubject, forKey: self)
-        return newSubject.eraseToAnyPublisher()
+        WeakCache.state.forceCastedValue(forKey: self, default: self.createStream()).eraseToAnyPublisher()
     }
     
     var currentState: State {
@@ -70,34 +65,24 @@ public extension Reactable {
     
     internal func setState(_ state: State) {
         WeakCache.currentState.setValue(state, forKey: self)
+        let subject = WeakCache.state.forceCastedValue(forKey: self, default: self.createStream())
+        subject.send(state)
     }
     
-    internal func sendObservableEvent(state: State) {
-        if let subject = WeakCache.state.value(forKey: self) as? CurrentValueSubject<State, Never> {
-            subject.send(state)
-        }
+    internal func createStream() -> CurrentValueSubject<State, Never> {
+        let stateStream = CurrentValueSubject<State, Never>(self.initialState)
+        return stateStream
     }
 }
 
 public extension Reactable {
 
     func action(_ action: Action) {
-        self.dispatch(action: action) { [weak self] result in
-            guard let self else { return }
-            if let state = result.output {
-                self.sendGlobalActionIfNeeded(action, state: state)
-            }
-        }
+        self.dispatch(action: action, completion: { _ in })
     }
     
     func action(_ action: Action, completion: @escaping (Result<State, Never>) -> Void) {
-        self.dispatch(action: action) { [weak self] result in
-            guard let self else { return }
-            completion(result)
-            if let state = result.output {
-                self.sendGlobalActionIfNeeded(action, state: state)
-            }
-        }
+        self.dispatch(action: action, completion: completion)
     }
     
     @discardableResult
@@ -108,7 +93,7 @@ public extension Reactable {
                 switch result {
                 case .success(let state):
                     continuation.resume(returning: state)
-                    self.sendGlobalActionIfNeeded(action, state: result.output ?? self.initialState)
+                    
                 case let .failure(error):
                     continuation.resume(throwing: error)
                 }
@@ -122,7 +107,6 @@ public extension Reactable {
                 guard let self else { return }
                 if let state = result.output {
                     promise(.success(state))
-                    self.sendGlobalActionIfNeeded(action, state: state)
                 }
             }
         }
@@ -151,7 +135,7 @@ public extension Reactable {
                 receiveValue: { [weak self] finalState in
                     guard let self else { return }
                     completion(.success(finalState))
-                    self.sendObservableEvent(state: finalState)
+                    self.sendGlobalActionIfNeeded(action, state: finalState)
                 }
             )
         

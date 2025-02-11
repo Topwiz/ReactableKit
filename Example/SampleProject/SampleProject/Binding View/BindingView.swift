@@ -32,9 +32,18 @@ struct BindingView: View {
                 
                 Text("\(self.store.state.slider)")
             }
+            
                 
+            Button {
+                self.store.action(.emitTest)
+            } label: {
+                Text("emitTest")
+            }
         }
         .padding(20)
+        .emit(\.$emitTest, from: self.store) { value in
+            print("emitTest: \(value)")
+        }
     }
 }
 

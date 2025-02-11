@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-public protocol PathState { }
+public protocol PathState: Hashable { }
 
 public struct AnyPathState: PathState, Hashable {
     private let base: any PathState
@@ -119,9 +119,9 @@ public struct _NavigationDestinationViewModifier<Destination: View>: ViewModifie
 @available(iOS 16.0, *)
 public extension NavigationLink {
     init<S: PathState>(
-        state: S,
+        reactable: S,
         @ViewBuilder label: @escaping () -> Label
     ) where Destination == Never {
-        self.init(value: AnyPathState(state), label: label)
+        self.init(value: AnyPathState(reactable), label: label)
     }
 }

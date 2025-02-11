@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 import SwiftUI
 
-final class UIKitExampleReactable: Reactable {
+final class UIKitExampleReactable: Reactable, PathState {
     
     enum Action {
         case changeTitle
@@ -21,7 +21,7 @@ final class UIKitExampleReactable: Reactable {
         case setEmit
     }
     
-    struct State: PathState {
+    struct State {
         var title: String = ""
         @Emit var emitTest: Bool = false
     }

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 @propertyWrapper
 public struct Emit<Value>: CustomStringConvertible {
@@ -63,5 +64,38 @@ extension Store {
             .removeDuplicates { $0.count == $1.count }
             .map(\.wrappedValue)
             .eraseToAnyPublisher()
+    }
+}
+
+extension View {
+    public func emit<R: Reactable, T>(
+        _ keyPath: KeyPath<R.State, Emit<T>>,
+        from store: Store<R>,
+        perform action: @escaping (T) -> Void
+    ) -> some View {
+        self.modifier(EmitModifier(store: store, keyPath: keyPath, action: action))
+    }
+}
+
+struct EmitModifier<R: Reactable, T>: ViewModifier {
+    @ObservedObject var store: Store<R>
+    let keyPath: KeyPath<R.State, Emit<T>>
+    let action: (T) -> Void
+    @State private var cancellable: AnyCancellable?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                let key = ObjectIdentifier(self.keyPath)
+                self.cancellable?.cancel()
+                self.cancellable = self.store.emit(self.keyPath)
+                    .receive(on: DispatchQueue.main)
+                    .sink(receiveValue: self.action)
+            }
+            .onDisappear {
+                let key = ObjectIdentifier(self.keyPath)
+                self.cancellable?.cancel()
+                self.cancellable = nil
+            }
     }
 }

@@ -10,11 +10,16 @@ import Combine
 import SwiftUI
 
 public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
-    private let reactable: R
+    public let reactable: R
     
     public var state: R.State {
         get { self.reactable.currentState }
         set { self.reactable.setState(newValue) }
+    }
+    
+    public var cancellables: Set<AnyCancellable> {
+        get { self.reactable.cancellables }
+        set { self.reactable.cancellables = newValue }
     }
     
     public var projectedValue: Binding<R.State> {

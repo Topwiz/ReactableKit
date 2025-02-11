@@ -9,7 +9,7 @@ import Foundation
 import ReactableKit
 import Combine
 
-final class SharedStateChildReactable: Reactable, ObservableEvent {
+final class SharedStateChildReactable: Reactable, PathState, ObservableEvent {
     
     enum Action {
         case sharedStateUpdated(SharedStateReactable.SharedState)
@@ -20,7 +20,7 @@ final class SharedStateChildReactable: Reactable, ObservableEvent {
         var username: String = ""
     }
     
-    struct State: PathState {
+    struct State {
         @Shared(.file()) var sharedState = SharedStateReactable.SharedState()
         @ViewState var name: String = ""
         var index: Int = 0

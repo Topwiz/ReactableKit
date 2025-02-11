@@ -9,7 +9,7 @@ import Foundation
 import ReactableKit
 import Combine
 
-final class SharedStateReactable: Reactable {
+final class SharedStateReactable: Reactable, PathState {
     
     enum Action {
         case changeData
@@ -30,7 +30,7 @@ final class SharedStateReactable: Reactable {
         var isPremium: Bool = false
     }
     
-    struct State: PathState {
+    struct State {
         @Shared(.memory) var isPremium = false
         @Shared(.file(path: "testing/")) var sharedState = SharedState()
         @Shared(.file(path: "testing/")) var bool = false

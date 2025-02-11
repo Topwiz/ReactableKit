@@ -132,18 +132,19 @@ Reactable provides multiple ways to **send actions and track completion**.
 
 ```swift
 // Using async-await
+let reactable = CounterReactable()
 Task {
-    let state = try await CounterReactable().action(.increase)
+    let state = try await reactable.action(.increase)
 }
 
 // Using Combine’s sink
-let action = CounterReactable().actionPublish(.increase)
+let action = reactable.actionPublish(.increase)
     .sink { state in
         print(state)
     }
 
 // Using Completion Handler
-CounterReactable().action(.increase) { result in
+reactable.action(.increase) { result in
     print(result)
 }
 ```
@@ -161,13 +162,13 @@ CounterReactable().action(.increase) { result in
 ```swift
 struct State {
     @ViewState var count: Int = 1
-    @ViewState(disableCheckingEquatable: true) var forceUpdate: Bool = false
+    @ViewState(ignoreEquality: true) var forceUpdate: Bool = false
 }
 ```
 
 #### 🔄 `@Shared`
 
-@Shared` enables **state sharing** between **parent and child components**.
+`@Shared` enables **state sharing** between **parent and child components**.
 
 ```swift
 struct SharedState: Codable, Equatable {
@@ -179,8 +180,8 @@ struct SharedState: Codable, Equatable {
 struct State {
     @Shared(.file()) var sharedState = SharedState()
     @Shared(.file(path: "Test/")) var sharedState = SharedState() // sub folder path
-    @Shared(.memory) var sharedState = SharedState()
-    @Shared(.memory, key: "custom_key") var sharedState = SharedState() // custom key
+    @Shared var sharedState = SharedState()
+    @Shared(key: "custom_key") var sharedState = SharedState() // custom key
     @ViewState var displayInfo: String = ""
 }
 ```
@@ -201,14 +202,19 @@ struct MyState {
 #### 📌 Subscribing to `emit(_:)`
 
 ```swift
-reactable.emit(\ .$title)
+reactable.emit(\.$title)
     .sink { newValue in
         print("Title updated:", newValue)
     }
     .store(in: &cancellables)
 ```
-
-
+#### 📌 Using `@Emit` in SwiftUI
+```swift
+ZStack { }
+.emit(\.$title, from: self.store) { value in
+    print("Title updated:", value)
+}
+```
 
 ### 2️⃣ `ObservableEvent` (Child → Parent Communication)
 
