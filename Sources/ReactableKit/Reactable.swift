@@ -13,6 +13,7 @@ enum WeakCache {
     nonisolated(unsafe) static let cancellables = WeakKeyDictionary<AnyObject, Set<AnyCancellable>>()
     nonisolated(unsafe) static let state = WeakKeyDictionary<AnyObject, Any>()
     nonisolated(unsafe) static let currentState = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let isTransformRegisteredKey = WeakKeyDictionary<AnyObject, Any>()
 }
 
 public protocol Reactable: AnyObject, IdentityHashable {
@@ -173,16 +174,22 @@ public extension Reactable {
         cancellable.store(in: &cancellables)
     }
     
-    private var isTransformRegisteredKey: String {
-        "isTransformRegistered_\(ObjectIdentifier(self))"
+    private var isTransformRegisteredKey: KeyWrapper {
+        get { WeakCache.isTransformRegisteredKey.forceCastedValue(forKey: self, default: KeyWrapper()) }
+        set { WeakCache.isTransformRegisteredKey.setValue(newValue, forKey: self) }
     }
     
     var isTransformRegistered: Bool {
         get {
-            objc_getAssociatedObject(self, self.isTransformRegisteredKey) as? Bool ?? false
+            objc_getAssociatedObject(self, isTransformRegisteredKey.pointer) as? Bool ?? false
         }
         set {
-            objc_setAssociatedObject(self, self.isTransformRegisteredKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, isTransformRegisteredKey.pointer, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
+}
+
+final class KeyWrapper {
+    let pointer: UnsafeRawPointer = UnsafeRawPointer(bitPattern: 0x1)!
+    init() { }
 }

@@ -43,6 +43,8 @@ struct BindingView: View {
         .padding(20)
         .emit(\.$emitTest, from: self.store) { value in
             print("emitTest: \(value)")
+        }.onDisappear {
+            print("BindingView.onDisappear called!")
         }
     }
 }
