@@ -48,7 +48,7 @@ final class SharedStateChildReactable: Reactable, PathState, ObservableEvent {
                 .just(.setSharedName(randomString(length: 5)))
             ])
             .takeUntil(self.cancelTask.filter { $0 == .test }.eraseToAnyPublisher())
-            
+
         case let .sharedStateUpdated(value):
             return .just(.setName(value.username))
         }

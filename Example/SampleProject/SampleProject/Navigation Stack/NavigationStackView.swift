@@ -36,8 +36,8 @@ struct NavigationStackView: View {
                     Text("[NavigationLink] UIKitExample")
                 }
             }
-        } destination: { state in
-            switch state {
+        } destination: { reactable in
+            switch reactable {
             case let reactable as CounterReactable:
                 CounterView(store: Store(reactable))
                 

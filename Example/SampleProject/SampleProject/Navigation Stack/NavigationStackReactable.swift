@@ -30,7 +30,7 @@ final class NavigationStackReactable: Reactable {
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         switch action {
         case .pushCounter:
-            return .just(.push(self.currentState.counterReactable))
+            return .just(.push(CounterReactable()))
         }
     }
     

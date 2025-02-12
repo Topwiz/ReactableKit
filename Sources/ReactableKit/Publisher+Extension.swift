@@ -189,3 +189,42 @@ public extension Publisher {
         .eraseToAnyPublisher()
     }
 }
+
+extension PassthroughSubject: @unchecked Sendable where Output: Sendable {}
+
+final class TaskHolder: @unchecked Sendable {
+    var task: Task<Void, Never>?
+}
+
+public extension AnyPublisher where Output: Sendable, Failure == Never {
+    
+    static func run(
+        _ operation: @escaping @Sendable (@Sendable (Output) async -> Void) async -> Void
+    ) -> AnyPublisher<Output, Never> {
+        Deferred {
+            let subject = PassthroughSubject<Output, Never>()
+            let taskHolder = TaskHolder()
+            let op: @Sendable (@Sendable (Output) async -> Void) async -> Void = operation
+            
+            return subject
+                .handleEvents(
+                    receiveSubscription: { _ in
+                        DispatchQueue.main.async {
+                            taskHolder.task = Task {
+                                await op { output in
+                                    guard !Task.isCancelled else { return }
+                                    subject.send(output)
+                                }
+                                subject.send(completion: .finished)
+                            }
+                        }
+                    },
+                    receiveCancel: {
+                        taskHolder.task?.cancel()
+                    }
+                )
+                .eraseToAnyPublisher()
+        }
+        .eraseToAnyPublisher()
+    }
+}
