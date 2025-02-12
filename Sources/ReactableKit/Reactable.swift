@@ -127,6 +127,7 @@ public extension Reactable {
                 return newState
             }
             .last()
+            .replaceEmpty(with: self.currentState)
             .sink(
                 receiveCompletion: { [weak self] completionResult in
                     guard let self, let cancellable else { return }
