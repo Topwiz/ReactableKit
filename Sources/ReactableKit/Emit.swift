@@ -86,14 +86,13 @@ struct EmitModifier<R: Reactable, T>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onAppear {
-                let key = ObjectIdentifier(self.keyPath)
                 self.cancellable?.cancel()
                 self.cancellable = self.store.emit(self.keyPath)
                     .receive(on: DispatchQueue.main)
+                    .dropFirst()
                     .sink(receiveValue: self.action)
             }
             .onDisappear {
-                let key = ObjectIdentifier(self.keyPath)
                 self.cancellable?.cancel()
                 self.cancellable = nil
             }
