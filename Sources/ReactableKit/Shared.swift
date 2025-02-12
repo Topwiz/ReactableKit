@@ -19,6 +19,8 @@ public enum StorageType: Hashable {
 
 // MARK: - @Shared (Unified)
 
+extension Shared: @unchecked Sendable where Value: Sendable {}
+
 @propertyWrapper
 public struct Shared<Value: Equatable>: CustomStringConvertible {
     private let key: String

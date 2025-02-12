@@ -8,6 +8,8 @@
 import Foundation
 import SwiftUI
 
+extension Emit: @unchecked Sendable where Value: Sendable {}
+
 @propertyWrapper
 public struct Emit<Value>: CustomStringConvertible {
     

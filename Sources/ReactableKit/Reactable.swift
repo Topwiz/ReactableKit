@@ -88,7 +88,7 @@ public extension Reactable {
     
     @discardableResult
     func action(_ action: Action) async -> State {
-        return try await withUnsafeContinuation { [unowned self] continuation in
+        return await withUnsafeContinuation { [unowned self] continuation in
             self.dispatch(action: action) { [weak self] result in
                 guard let self else { return }
                 switch result {

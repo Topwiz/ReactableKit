@@ -10,7 +10,7 @@ import ReactableKit
 
 final class ManagerSampleReactable: Reactable {
     
-    static var shared: ManagerSampleReactable = ManagerSampleReactable()
+    nonisolated(unsafe) static var shared: ManagerSampleReactable = ManagerSampleReactable()
     
     enum Action {
         case test
@@ -51,11 +51,11 @@ final class ManagerSampleReactable: Reactable {
 }
 
 final class ManagerSampleContainer {
-    static var shared: ManagerSampleContainer = ManagerSampleContainer()
+    nonisolated(unsafe) static var shared: ManagerSampleContainer = ManagerSampleContainer()
     
     func updateAsyncState() {
         Task {
-            let state = try await ManagerSampleReactable.shared.action(.test)
+            let state = await ManagerSampleReactable.shared.action(.test)
             print("update state 1 \(state)")
         }
     }

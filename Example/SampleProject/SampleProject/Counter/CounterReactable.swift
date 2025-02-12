@@ -9,6 +9,8 @@ import Foundation
 import ReactableKit
 import Combine
 
+extension CounterReactable: @unchecked Sendable { }
+
 final class CounterReactable: Reactable, PathState {
     
     enum Action {
@@ -42,7 +44,7 @@ final class CounterReactable: Reactable, PathState {
         case .increase:
             self.cancelTask.send(.increase)
             return .concat([
-                .run { send in
+                .run { [unowned self] send in
                     // 1) Mutation
                     await send(.setCount(10))
                     print("1 Mutation")
