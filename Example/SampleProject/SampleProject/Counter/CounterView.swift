@@ -14,8 +14,18 @@ struct CounterView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("\(self.store.state.count)")
-                .font(.headline)
+            self.store.updateOn(\.count) { value in
+                Text("\(value)")
+                    .font(.headline)
+                    .background(Color.random())
+            }
+            
+            
+            self.store.updateOn(\.count1) { value in
+                Text("\(value)")
+                    .font(.headline)
+                    .background(Color.random())
+            }
             
             HStack(spacing: 20) {
                 Button {
@@ -36,4 +46,14 @@ struct CounterView: View {
 
 #Preview {
     CounterView()
+}
+
+extension Color {
+    static func random() -> Color {
+        return Color(
+            red: Double.random(in: 0...1),
+            green: Double.random(in: 0...1),
+            blue: Double.random(in: 0...1)
+        )
+    }
 }

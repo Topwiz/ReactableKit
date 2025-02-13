@@ -26,6 +26,7 @@ final class CounterReactable: Reactable, PathState {
     
     enum Mutation {
         case setCount(Int)
+        case setCount1(Int)
     }
     
     enum CancelTask {
@@ -44,7 +45,8 @@ final class CounterReactable: Reactable, PathState {
         case .increase:
             self.cancelTask.send(.increase)
             return .concat([
-                .run { [unowned self] send in
+                .run { [weak self] send in
+                    guard let self else { return }
                     // 1) Mutation
                     await send(.setCount(10))
                     print("1 Mutation")
@@ -72,7 +74,7 @@ final class CounterReactable: Reactable, PathState {
             
             
         case .decrease:
-            return .just(.setCount(self.currentState.count - 1))
+            return .just(.setCount1(self.currentState.count1 - 1))
             
         case let .multiply(value):
             return .just(.setCount(self.currentState.count * value))
@@ -84,6 +86,10 @@ final class CounterReactable: Reactable, PathState {
         case let .setCount(value):
             print("setCount \(value)")
             state.count = value
+            
+        case let .setCount1(value):
+            print("setCount1 \(value)")
+            state.count1 = value
         }
     }
     

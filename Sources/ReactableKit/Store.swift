@@ -49,8 +49,12 @@ public class Store<R: Reactable>: @unchecked Sendable, ObservableObject {
         let mirror = Mirror(reflecting: self.reactable.currentState)
         
         for child in mirror.children {
-            if let equatableState = child.value as? PublishedWrapper {
-                equatableState.set(objectWillChange: objectWillChange)
+            if let publishedWrapper = child.value as? PublishedWrapper {
+                publishedWrapper.setOnChange { [weak self] in
+                    DispatchQueue.main.async { [weak self] in
+                        self?.objectWillChange.send()
+                    }
+                }
             }
         }
     }

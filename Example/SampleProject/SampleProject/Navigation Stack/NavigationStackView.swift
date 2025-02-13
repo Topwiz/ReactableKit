@@ -35,6 +35,10 @@ struct NavigationStackView: View {
                 NavigationLink(reactable: UIKitExampleReactable()) {
                     Text("[NavigationLink] UIKitExample")
                 }
+                
+                NavigationLink(reactable: ForEachReactable()) {
+                    Text("[NavigationLink] ForEach")
+                }
             }
         } destination: { reactable in
             switch reactable {
@@ -49,6 +53,9 @@ struct NavigationStackView: View {
             
             case let reactable as UIKitExampleReactable:
                 SwiftUIUIView()
+                
+            case let reactable as ForEachReactable:
+                ForEachView(store: Store(reactable))
                 
             default:
                 EmptyView()

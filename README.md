@@ -126,7 +126,83 @@ struct CounterView: View {
 }
 ```
 
-### 4️⃣ Dispatching Actions in Reactable
+### 4️⃣ `updateOn`: Optimizing SwiftUI Updates
+`updateOn` is a powerful SwiftUI state observer that ensures views update only when necessary. It automatically detects whether the keyPath is a Value or Binding<Value> and prevents unnecessary UI re-renders.
+
+#### Using updateOn for Value-Based State Updates
+When using a normal value (Int, Bool, etc.), updateOn ensures the view only updates when the value changes.
+- Ensures minimal SwiftUI re-renders
+- Uses EquatableValueView for optimal performance
+
+```swift
+struct CounterView: View {
+    @ObservedObject var store = Store { 
+        CounterReactable() 
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            // ✅ updates UI when `count` changes. It does not update when count1 changes.
+            
+            self.store.updateOn(\.count) { value in
+                Text("\(value)")
+                    .font(.headline)
+            }
+
+           // Always updates
+           
+            Text("\(self.store.state.count1)")
+                .font(.headline)
+
+           // Binding<Value> Exmaple
+           
+           self.store.updateOn(\.isOn1) { value in
+                Toggle(isOn: value) {
+                    Text("Toggle 1")
+                }
+            }
+
+            // Binding<Value> With Action Exmaple 
+            
+            self.store.updateOn(\.isOn1) { value in
+                Toggle(isOn: value) {
+                    Text("Toggle 1 updateOn with action")
+                }
+            } action: { newValue in
+                .isOnChanged
+            }
+            
+            // ForEach List Example
+            
+            ForEach(self.store.state.list) { item in
+                self.store.updateOn(\.list, for: item.id) { value in
+                    Text("\(value.index)")
+                        .font(.headline)
+                }
+            }
+            
+            // ForEach List Multi View Example
+            
+            ForEach(self.store.state.list) { item in
+                HStack {
+                    self.store.updateOn(\.list, for: item.id, property: \.index) { value in
+                        Text("\(value)")
+                            .font(.headline)
+                    }
+                    
+                    self.store.updateOn(\.list, for: item.id, property: \.toggle) { value in
+                        Toggle(isOn: value) {
+                            Text("Toggle 2 updateOn")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+### 5️⃣ Dispatching Actions in Reactable
 
 Reactable provides multiple ways to **send actions and track completion**.
 

@@ -11,6 +11,8 @@
 		A16C162D2D527A9A00E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C162C2D527A9A00E278BB /* ReactableKit */; };
 		A16C16332D527ABF00E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16322D527ABF00E278BB /* ReactableKit */; };
 		A16C16362D527D8400E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16352D527D8400E278BB /* ReactableKit */; };
+		A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */; };
+		A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */; };
 		A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80A2D433508009391A2 /* NavigationStackView.swift */; };
 		A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80B2D433508009391A2 /* ExmapleApp.swift */; };
 		A1F2B80F2D433508009391A2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1F2B8072D433508009391A2 /* Preview Assets.xcassets */; };
@@ -32,6 +34,8 @@
 
 /* Begin PBXFileReference section */
 		A1AC02292D432F870021693D /* ExmapleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExmapleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachReactable.swift; sourceTree = "<group>"; };
+		A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachView.swift; sourceTree = "<group>"; };
 		A1F2B8072D433508009391A2 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A1F2B8092D433508009391A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1F2B80A2D433508009391A2 /* NavigationStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStackView.swift; sourceTree = "<group>"; };
@@ -82,6 +86,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		A1CED20A2D5E3C50006A2F9E /* ForEach  */ = {
+			isa = PBXGroup;
+			children = (
+				A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */,
+				A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */,
+			);
+			path = "ForEach ";
+			sourceTree = "<group>";
+		};
 		A1F2B8062D433508009391A2 /* Counter */ = {
 			isa = PBXGroup;
 			children = (
@@ -102,6 +115,7 @@
 		A1F2B80C2D433508009391A2 /* SampleProject */ = {
 			isa = PBXGroup;
 			children = (
+				A1CED20A2D5E3C50006A2F9E /* ForEach  */,
 				A1F2B83C2D4FA382009391A2 /* UIKitExample */,
 				A1F2B82C2D49D4B0009391A2 /* Manager */,
 				A1F2B8232D48F52A009391A2 /* Shared */,
@@ -246,7 +260,9 @@
 				A1F2B8252D48F543009391A2 /* SharedStateReactable.swift in Sources */,
 				A1F2B8272D48F54D009391A2 /* SharedStateView.swift in Sources */,
 				A1F2B8142D433524009391A2 /* CounterReactable.swift in Sources */,
+				A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */,
 				A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */,
+				A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */,
 				A1F2B81D2D460217009391A2 /* BindingView.swift in Sources */,
 				A1F2B83E2D4FA3AE009391A2 /* UIKitExample.swift in Sources */,
 				A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */,
@@ -385,10 +401,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SampleProject/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = T37K32BFN5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -416,10 +433,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SampleProject/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = T37K32BFN5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

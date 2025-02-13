@@ -10,15 +10,14 @@ import Combine
 import SwiftUI
 
 protocol PublishedWrapper {
-    var objectWillChange: WeakObservableObjectPublisher? { get set }
-    func set(objectWillChange: ObservableObjectPublisher)
+    func setOnChange(_ handler: @escaping () -> Void)
 }
 
 @propertyWrapper
 public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, PublishedWrapper, CustomStringConvertible {
     @Atomic private var value: Value
     private var ignoreEquality: Bool
-    var objectWillChange: WeakObservableObjectPublisher?
+    private var onChange: (() -> Void)?
     
     public var wrappedValue: Value {
         get { value }
@@ -26,8 +25,8 @@ public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, Publis
             if !self.ignoreEquality {
                 guard newValue != value else { return }
             }
-            value = newValue
-            self.update()
+            self.value = newValue
+            self.onChange?()
         }
     }
     
@@ -42,19 +41,13 @@ public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, Publis
         "\(self.wrappedValue)"
     }
     
-    func update() {
-        DispatchQueue.main.async { [weak self] in
-            self?.objectWillChange?.send()
-        }
-    }
-    
     public init(wrappedValue: Value, ignoreEquality: Bool = false) {
         self.value = wrappedValue
         self.ignoreEquality = ignoreEquality
     }
-
-    func set(objectWillChange: ObservableObjectPublisher) {
-        self.objectWillChange = .init(objectWillChange)
+    
+    public func setOnChange(_ handler: @escaping () -> Void) {
+        self.onChange = handler
     }
     
     public static func == (lhs: ViewState<Value>, rhs: ViewState<Value>) -> Bool {

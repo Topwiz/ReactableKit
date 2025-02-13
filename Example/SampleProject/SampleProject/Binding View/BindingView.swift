@@ -12,19 +12,41 @@ struct BindingView: View {
     
     var body: some View {
         VStack {
+
+            self.store.updateOn(\.isOn1) { value in
+                Toggle(isOn: value) {
+                    Text("Toggle 1 updateOn")
+                }
+                .background(Color.random())
+            }
+
             Toggle(
                 isOn: self.store.binding(\.isOn1) { value in
                     print("value: \(value)")
                     return .isOnChanged
                 }
             ) {
-                Text("Toggle 1")
+                Text("Toggle 1 normal binding")
+            }
+            .background(Color.random())
+            
+            self.store.updateOn(\.isOn1) { value in
+                Toggle(isOn: value) {
+                    Text("Toggle 1 updateOn with action")
+                }
+                .background(Color.random())
+                
+            } action: { newValue in
+                .isOnChanged
             }
             
-            Toggle(
-                isOn: self.$store.state.isOn2
-            ) {
-                Text("Toggle 2")
+            self.store.updateOn(\.isOn2) { value in
+                Toggle(
+                    isOn: value
+                ) {
+                    Text("Toggle 2 updateOn")
+                }
+                .background(Color.random())
             }
             
             HStack {
@@ -32,13 +54,14 @@ struct BindingView: View {
                 
                 Text("\(self.store.state.slider)")
             }
-            
+            .background(Color.random())
                 
             Button {
                 self.store.action(.emitTest)
             } label: {
                 Text("emitTest")
             }
+            .background(Color.random())
         }
         .padding(20)
         .emit(\.$emitTest, from: self.store) { value in
