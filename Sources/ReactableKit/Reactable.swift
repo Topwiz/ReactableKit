@@ -118,11 +118,10 @@ public extension Reactable {
         var cancellable: AnyCancellable? = nil
         
         cancellable = self.mutate(action: action)
-            .subscribe(on: self.queue)
             .receive(on: self.queue)
             .scan(self.currentState) { [weak self] currentState, mutation -> State in
                 guard let self else { return currentState }
-                var newState = currentState
+                var newState = self.currentState
                 self.reduce(state: &newState, mutate: mutation)
                 self.setState(newState)
                 return newState
