@@ -84,11 +84,9 @@ final class CounterReactable: Reactable, PathState {
     func reduce(state: inout State, mutate: Mutation) {
         switch mutate {
         case let .setCount(value):
-            print("setCount \(value)")
             state.count = value
             
         case let .setCount1(value):
-            print("setCount1 \(value)")
             state.count1 = value
         }
     }
@@ -109,12 +107,12 @@ final class CounterReactable: Reactable, PathState {
     }
     
     func fetchUserData() async -> String {
-        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2초 대기 (네트워크 요청 시뮬레이션)
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
         return "User Data"
     }
 
     func fetchOtherData() async -> String {
-        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2초 대기
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
         return "Other Data"
     }
 }

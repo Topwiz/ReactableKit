@@ -199,6 +199,7 @@ final class TaskHolder: @unchecked Sendable {
 public extension AnyPublisher where Output: Sendable, Failure == Never {
     
     static func run(
+        on queue: DispatchQueue? = nil,
         _ operation: @escaping @Sendable (@Sendable (Output) async -> Void) async -> Void
     ) -> AnyPublisher<Output, Never> {
         Deferred {
@@ -209,13 +210,25 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
             return subject
                 .handleEvents(
                     receiveSubscription: { _ in
-                        DispatchQueue.main.async {
-                            taskHolder.task = Task {
-                                await op { output in
-                                    guard !Task.isCancelled else { return }
-                                    subject.send(output)
+                        if let queue = queue {
+                            queue.async {
+                                taskHolder.task = Task {
+                                    await op { output in
+                                        guard !Task.isCancelled else { return }
+                                        subject.send(output)
+                                    }
+                                    subject.send(completion: .finished)
                                 }
-                                subject.send(completion: .finished)
+                            }
+                        } else {
+                            DispatchQueue.main.async {
+                                taskHolder.task = Task {
+                                    await op { output in
+                                        guard !Task.isCancelled else { return }
+                                        subject.send(output)
+                                    }
+                                    subject.send(completion: .finished)
+                                }
                             }
                         }
                     },
