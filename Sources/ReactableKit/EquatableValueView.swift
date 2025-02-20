@@ -186,4 +186,56 @@ public extension Store {
 
         return AnyView(EquatableBindingView(value: binding, content: content))
     }
+    
+    /// Updates the UI only when the value associated with a specific key in a dictionary changes.
+    /// - Parameters:
+    ///   - keyPath: The key path to the dictionary in the state.
+    ///   - key: The key whose associated value is observed.
+    ///   - content: A closure that receives the value and returns the updated view.
+    /// - Returns: A SwiftUI view that updates only when the `value` associated with the given key changes.
+    @MainActor
+    func updateOn<Key: Hashable, Value: Equatable>(
+        _ keyPath: WritableKeyPath<R.State, [Key: Value]>,
+        for key: Key,
+        @ViewBuilder content: @escaping (Value) -> some View
+    ) -> some View {
+        guard let value = self.state[keyPath: keyPath][key] else {
+            return AnyView(EmptyView())
+        }
+        return AnyView(EquatableValueView(value: value, content: content))
+    }
+    
+    /// Updates the UI when the value associated with a specific key in a dictionary changes, and allows modification.
+    /// - Parameters:
+    ///   - keyPath: The key path to the dictionary in the state.
+    ///   - key: The key whose associated value is observed and modified.
+    ///   - content: A closure that receives the binding to the value and returns the updated view.
+    ///   - action: An optional closure that receives `BindingValue<Value>` (old and new values) and returns an action to handle state changes.
+    /// - Returns: A SwiftUI view that updates only when the `value` associated with the given key changes and allows modification.
+    @MainActor
+    func updateOn<Key: Hashable, Value: Equatable>(
+        _ keyPath: WritableKeyPath<R.State, [Key: Value]>,
+        for key: Key,
+        @ViewBuilder content: @escaping (Binding<Value>) -> some View,
+        action actionGenerator: (@Sendable (BindingValue<Value>) -> R.Action)? = nil
+    ) -> some View {
+        guard let existingValue = self.state[keyPath: keyPath][key] else {
+            return AnyView(EmptyView())
+        }
+        
+        let binding = Binding<Value>(
+            get: { self.state[keyPath: keyPath][key] ?? existingValue },
+            set: { [weak self] newValue in
+                guard let self = self else { return }
+                let oldValue = self.state[keyPath: keyPath][key] ?? existingValue
+                guard oldValue != newValue else { return }
+                self.state[keyPath: keyPath][key] = newValue
+                if let action = actionGenerator?(BindingValue(old: oldValue, new: newValue)) {
+                    self.reactable.action(action)
+                }
+            }
+        )
+        
+        return AnyView(EquatableBindingView(value: binding, content: content))
+    }
 }
