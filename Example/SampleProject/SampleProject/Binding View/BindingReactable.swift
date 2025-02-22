@@ -33,14 +33,9 @@ final class BindingReactable: Reactable, PathState {
         self.initialState = state
     }
     
-    deinit {
-        print("BindingReactable.deinit")
-    }
-    
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         switch action {
         case .isOnChanged:
-            print("isOnChanged 1 changed: \(self.currentState.isOn1)")
             return .empty()
             
         case .emitTest:

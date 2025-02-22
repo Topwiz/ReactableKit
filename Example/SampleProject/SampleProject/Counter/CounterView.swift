@@ -13,33 +13,44 @@ struct CounterView: View {
     @ObservedObject var store = Store(CounterReactable())
     
     var body: some View {
-        VStack(spacing: 20) {
-            self.store.updateOn(\.count) { value in
-                Text("\(value)")
-                    .font(.headline)
-                    .background(Color.random())
-            }
-            
-            
-            self.store.updateOn(\.count1) { value in
-                Text("\(value)")
-                    .font(.headline)
-                    .background(Color.random())
-            }
-            
-            HStack(spacing: 20) {
-                Button {
-                    self.store.action(.increase)
-                } label: {
-                    Text("+")
+        HStack(spacing: 20) {
+            VStack {
+                self.store.updateOn(\.count) { value in
+                    Text("\(value)")
+                        .font(.headline)
                 }
                 
-                Button {
-                    self.store.action(.decrease)
-                } label: {
-                    Text("-")
+                HStack(spacing: 20) {
+                    Button {
+                        self.store.action(.increase)
+                    } label: {
+                        Text("+")
+                    }
+                    
+                    Button {
+                        self.store.action(.decrease)
+                    } label: {
+                        Text("-")
+                    }
                 }
             }
+            
+            
+            VStack {
+                self.store.updateOn(\.count1) { value in
+                    Text("\(value)")
+                        .font(.headline)
+                }
+                
+                HStack(spacing: 20) {
+                    Button {
+                        self.store.action(.runTest)
+                    } label: {
+                        Text("run test")
+                    }
+                }
+            }
+            
         }
     }
 }

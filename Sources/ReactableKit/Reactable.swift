@@ -14,6 +14,7 @@ enum WeakCache {
     nonisolated(unsafe) static let state = WeakKeyDictionary<AnyObject, Any>()
     nonisolated(unsafe) static let currentState = WeakKeyDictionary<AnyObject, Any>()
     nonisolated(unsafe) static let isTransformRegisteredKey = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let isStub = WeakKeyDictionary<AnyObject, Bool>()
 }
 
 public protocol Reactable: AnyObject, IdentityHashable {
@@ -191,4 +192,13 @@ public extension Reactable {
 final class KeyWrapper {
     let pointer: UnsafeRawPointer = UnsafeRawPointer(bitPattern: 0x1)!
     init() { }
+}
+
+// MARK: - Stub
+
+public extension Reactable {
+    var isStub: Bool {
+        get { WeakCache.isStub.forceCastedValue(forKey: self, default: false) }
+        set { WeakCache.isStub.setValue(newValue, forKey: self) }
+    }
 }

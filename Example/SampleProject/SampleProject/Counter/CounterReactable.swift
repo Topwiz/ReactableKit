@@ -16,6 +16,7 @@ final class CounterReactable: Reactable, PathState {
     enum Action {
         case increase
         case decrease
+        case runTest
         case multiply(Int)
     }
     
@@ -43,12 +44,21 @@ final class CounterReactable: Reactable, PathState {
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         switch action {
         case .increase:
+            return .just(.setCount(self.currentState.count + 1))
+            
+        case .decrease:
+            return .just(.setCount(self.currentState.count - 1))
+            
+        case let .multiply(value):
+            return .just(.setCount(self.currentState.count * value))
+            
+        case .runTest:
             self.cancelTask.send(.increase)
             return .concat([
                 .run { [weak self] send in
                     guard let self else { return }
                     // 1) Mutation
-                    await send(.setCount(10))
+                    await send(.setCount1(10))
                     print("1 Mutation")
                     
                     // 2) API
@@ -61,23 +71,17 @@ final class CounterReactable: Reactable, PathState {
                     }
                     
                     // 3) Second Mutation
-                    await send(.setCount(20))
+                    await send(.setCount1(20))
                     print("4 Second Mutation")
                     
                     // 4) Addtional API
                     let otherData = await self.fetchOtherData()
                     print("5 Addtional API: \(otherData)")
                 },
-                .just(.setCount(30)),
+                .just(.setCount1(30)),
             ])
             .takeUntil(self.cancelTask.filter { $0 == .increase }.eraseToAnyPublisher())
             
-            
-        case .decrease:
-            return .just(.setCount1(self.currentState.count1 - 1))
-            
-        case let .multiply(value):
-            return .just(.setCount(self.currentState.count * value))
         }
     }
     
