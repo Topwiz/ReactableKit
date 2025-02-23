@@ -29,3 +29,5 @@ public struct Atomic<Value> {
         }
     }
 }
+
+extension Atomic: @unchecked Sendable where Value: Sendable { }
