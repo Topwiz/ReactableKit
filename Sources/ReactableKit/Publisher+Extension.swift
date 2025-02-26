@@ -190,7 +190,7 @@ public extension Publisher {
     }
 }
 
-extension PassthroughSubject: @unchecked Sendable where Output: Sendable {}
+extension PassthroughSubject: @unchecked @retroactive Sendable where Output: Sendable {}
 
 final class TaskHolder: @unchecked Sendable {
     var task: Task<Void, Never>?
@@ -239,5 +239,18 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
                 .eraseToAnyPublisher()
         }
         .eraseToAnyPublisher()
+    }
+}
+
+public extension Publisher where Failure == Never {
+    func bind(to action: @escaping (Output) -> Void) -> AnyCancellable {
+        self.sink(receiveValue: action)
+    }
+}
+
+public extension Publisher where Failure: Error {
+    func bind(to method: @escaping (Output) -> Void) -> AnyCancellable {
+        self.catch { _ in Empty<Output, Never>() }
+            .sink(receiveValue: method)
     }
 }
