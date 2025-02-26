@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import SwiftUI
+import ReactableKit
 
 final class UIKitExampleReactable: Reactable, PathState {
     
@@ -53,15 +54,19 @@ final class UIKitExampleReactable: Reactable, PathState {
 
 final class UIKitView: UIView {
     
-    let reactable: UIKitExampleReactable = .init()
     var cancellables: Set<AnyCancellable> = []
     
     let titleLabel = UILabel()
     let button = UIButton()
     let emitButton = UIButton()
     
+    deinit {
+        print("deinit UIKitView")
+    }
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
+        self.reactable = .init()
         self.addSubview(self.titleLabel)
         self.addSubview(self.button)
         self.addSubview(self.emitButton)
@@ -82,7 +87,6 @@ final class UIKitView: UIView {
         self.emitButton.setTitleColor(.black, for: .normal)
         self.emitButton.setTitle("Emit Test", for: .normal)
         self.emitButton.addTarget(self, action: #selector(self.emitButtonTapped), for: .touchUpInside)
-        self.bind()
     }
     
     required init?(coder: NSCoder) {
@@ -90,16 +94,18 @@ final class UIKitView: UIView {
     }
     
     @objc func buttonTapped() {
-        self.reactable.action(.changeTitle)
+        self.reactable?.action(.changeTitle)
     }
     
     @objc func emitButtonTapped() {
-        self.reactable.action(.updateEmit)
+        self.reactable?.action(.updateEmit)
     }
     
-    func bind() {
-        
-        self.reactable.state.map { $0.title }
+}
+
+extension UIKitView: ReactableView {
+    func bind(reactable: UIKitExampleReactable) {
+        reactable.state.map { $0.title }
             .debug()
             .distinctUntilChanged()
             .receive(on: DispatchQueue.main)
@@ -108,15 +114,14 @@ final class UIKitView: UIView {
             })
             .store(in: &self.cancellables)
         
-        self.reactable.emit(\.$emitTest)
+        reactable.emit(\.$emitTest)
             .debug()
             .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] value in
+            .sink(receiveValue: { value in
                 print("$emitTest: \(value)")
             })
             .store(in: &self.cancellables)
     }
-    
 }
 
 struct SwiftUIUIView: UIViewRepresentable {

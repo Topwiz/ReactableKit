@@ -8,7 +8,7 @@
 import SwiftUI
 @_exported import Combine
 
-enum WeakCache {
+private enum WeakCache {
     nonisolated(unsafe) static let queue = WeakKeyDictionary<AnyObject, DispatchQueue>()
     nonisolated(unsafe) static let cancellables = WeakKeyDictionary<AnyObject, Set<AnyCancellable>>()
     nonisolated(unsafe) static let state = WeakKeyDictionary<AnyObject, Any>()

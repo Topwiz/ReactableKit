@@ -320,6 +320,28 @@ func transformAction() -> AnyPublisher<Action, Never> {
 }
 ```
 
+### 3️⃣`ReactableView` Protocol
+Use `ReactableView` Protocol on UIKit Views.
+
+```swift
+final class UIKitView: UIView {
+    var cancellables: Set<AnyCancellable> = []
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        self.reactable = .init()
+    }
+}
+
+extension UIKitView: ReactableView { 
+    // Call's when self.reactable is set.
+    func bind(reactable: UIKitReactable) { 
+
+    }
+}
+```
+
+
 ---
 
 ## 🏗️ Roadmap
