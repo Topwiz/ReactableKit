@@ -11,6 +11,7 @@ import ReactableKit
 
 struct CounterView: View {
     @ObservedObject var store = Store(CounterReactable())
+    @ViewDependency(\.service) var service
     
     var body: some View {
         HStack(spacing: 20) {
@@ -51,6 +52,9 @@ struct CounterView: View {
                 }
             }
             
+        }
+        .onAppear {
+            let t = service.test()
         }
     }
 }

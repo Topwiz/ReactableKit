@@ -330,3 +330,143 @@ extension UIKitView: ReactableView {
 }
 ```
 
+### 4️⃣ Dependency Injection & Factory Pattern Usage
+
+This project uses a lightweight dependency injection system combined with a factory pattern to simplify object creation and dependency management across different environments (real, preview, test).
+
+### 1. DependencyInjectable
+
+`DependencyInjectable` is a protocol that allows types to define their dependencies for different environments. It includes an associated type `DependencyType` and static properties for `real`, `preview`, and `test` environments.
+
+```swift
+public protocol DependencyInjectable {
+    associatedtype DependencyType
+    static var real: DependencyType { get }
+    static var preview: DependencyType { get } // optional
+    static var test: DependencyType { get } // optional
+}
+```
+
+#### Example: 
+
+```swift
+protocol ServiceProtocol {
+    func test() -> String
+}
+
+struct Service: ServiceProtocol {
+     func test() -> String { "real" }
+    
+    struct Mock: ServiceProtocol {
+        public init() {}
+        public func test() -> String { "mock" }
+    }
+    
+    struct TestMock: ServiceProtocol {
+        public init() {}
+        public func test() -> String { "test" }
+    }
+}
+
+extension Service: DependencyInjectable {
+    static var real: ServiceProtocol { Service() }
+    static var preview: ServiceProtocol { Service.Mock() }
+    static var test: ServiceProtocol { Service.TestMock() }
+}
+
+extension GlobalDependencyKey {
+    var service: ServiceProtocol {
+        self[Service.self]
+    }
+}
+
+// usage
+@Dependency(\.service) var service
+```
+
+### 2. Factory
+
+```swift
+final class TestObject: Factory {
+    struct Payload {
+        var text: String
+    }
+
+    let payload: Payload
+    
+    init(payload: Payload) {
+        self.payload = payload
+    }
+    
+    func print1() {
+        print(self.payload.text)
+    }
+}
+
+extension TestObject: DependencyInjectable {
+    typealias DependencyType = TestObject.Factory
+    static var real: TestObject.Factory { .init() }
+}
+
+extension GlobalDependencyKey {
+    var testObjectFactory: TestObject.Factory {
+        self[TestObject.self]
+    }
+}
+
+// usage
+@Dependency(\.testObjectFactory) var testObjectFactory
+```
+
+### 2. AnyFactoryProducer
+
+`AnyFactoryProducer` is a generic wrapper that abstracts the creation process. It accepts a `Factory` and a transformation closure that converts the created instance into the desired output type.
+
+
+```swift
+// Define the protocol for testing
+protocol FactoryTestProtocol {
+    func test() -> String
+}
+
+// Real factory implementation
+struct FactoryTest: FactoryTestProtocol, Factory {
+    struct Payload { }
+    let payload: Payload
+    
+    init(payload: Payload) {
+        self.payload = payload
+    }
+    
+    func test() -> String { "real \(payload)" }
+}
+
+// Mock factory implementation
+struct FactoryTestMock: FactoryTestProtocol, Factory {
+    let payload: FactoryTest.Payload
+    
+    init(payload: FactoryTest.Payload) {
+        self.payload = payload
+    }
+    
+    func test() -> String { "mock \(payload)" }
+}
+
+// Conform FactoryTest to DependencyInjectable using AnyFactoryProducer
+extension FactoryTest: DependencyInjectable {
+    typealias DependencyType = AnyFactoryProducer<Payload, FactoryTestProtocol>
+    
+    static var real: DependencyType {
+        DependencyType(factory: FactoryTest.Factory())
+    }
+    static var test: DependencyType {
+        DependencyType(factory: FactoryTestMock.Factory())
+    }
+}
+
+extension GlobalDependencyKey {
+    var factoryTestFactory: FactoryTest.DependencyType {
+        self[FactoryTest.self]
+    }
+}
+```

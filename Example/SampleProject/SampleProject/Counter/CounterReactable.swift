@@ -34,6 +34,8 @@ final class CounterReactable: Reactable, PathState {
         case increase
     }
     
+    @Dependency(\.service) var service
+    
     var cancelTask = PassthroughSubject<CancelTask, Never>()
     var initialState: State
     
@@ -44,6 +46,9 @@ final class CounterReactable: Reactable, PathState {
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         switch action {
         case .increase:
+            let _ = self.service.test()
+            let _ = self.service.test()
+            let _ = self.service.test()
             return .just(.setCount(self.currentState.count + 1))
             
         case .decrease:

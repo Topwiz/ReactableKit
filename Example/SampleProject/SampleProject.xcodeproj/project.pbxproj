@@ -7,12 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
 		A16C162A2D527A8400E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16292D527A8400E278BB /* ReactableKit */; };
 		A16C162D2D527A9A00E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C162C2D527A9A00E278BB /* ReactableKit */; };
 		A16C16332D527ABF00E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16322D527ABF00E278BB /* ReactableKit */; };
 		A16C16362D527D8400E278BB /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A16C16352D527D8400E278BB /* ReactableKit */; };
 		A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */; };
 		A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */; };
+		A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
 		A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80A2D433508009391A2 /* NavigationStackView.swift */; };
 		A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80B2D433508009391A2 /* ExmapleApp.swift */; };
 		A1F2B80F2D433508009391A2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1F2B8072D433508009391A2 /* Preview Assets.xcassets */; };
@@ -47,6 +49,7 @@
 		A1AC02292D432F870021693D /* ExmapleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExmapleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachReactable.swift; sourceTree = "<group>"; };
 		A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachView.swift; sourceTree = "<group>"; };
+		A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyInjectableExmaple.swift; sourceTree = "<group>"; };
 		A1F2B8072D433508009391A2 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A1F2B8092D433508009391A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1F2B80A2D433508009391A2 /* NavigationStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStackView.swift; sourceTree = "<group>"; };
@@ -124,6 +127,14 @@
 			path = "ForEach ";
 			sourceTree = "<group>";
 		};
+		A1EF005B2D6FF046009BAED9 /* DI */ = {
+			isa = PBXGroup;
+			children = (
+				A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */,
+			);
+			path = DI;
+			sourceTree = "<group>";
+		};
 		A1F2B8062D433508009391A2 /* Counter */ = {
 			isa = PBXGroup;
 			children = (
@@ -144,6 +155,7 @@
 		A1F2B80C2D433508009391A2 /* SampleProject */ = {
 			isa = PBXGroup;
 			children = (
+				A1EF005B2D6FF046009BAED9 /* DI */,
 				A1CED20A2D5E3C50006A2F9E /* ForEach  */,
 				A1F2B83C2D4FA382009391A2 /* UIKitExample */,
 				A1F2B82C2D49D4B0009391A2 /* Manager */,
@@ -332,6 +344,7 @@
 				A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */,
 				A1F2B82B2D499D70009391A2 /* SharedStateChildReactable.swift in Sources */,
 				A1F2B8192D433E5D009391A2 /* NavigationStackReactable.swift in Sources */,
+				A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */,
 				A1F2B8122D43351D009391A2 /* CounterView.swift in Sources */,
 				A1F2B81F2D46021D009391A2 /* BindingReactable.swift in Sources */,
 				A1F2B82E2D49D4CF009391A2 /* ManagerSampleReactable.swift in Sources */,
@@ -342,6 +355,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */,
 				A1FE06C42D67914D00E010AA /* CounterReactable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

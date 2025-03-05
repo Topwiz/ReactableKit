@@ -9,6 +9,7 @@ import SwiftUI
 
 @main
 struct ExmapleApp: App {
+    
     var body: some Scene {
         WindowGroup {
             NavigationStackView()
