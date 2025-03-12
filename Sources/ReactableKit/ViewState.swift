@@ -20,7 +20,7 @@ public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, Publis
     private var onChange: (() -> Void)?
     
     public var wrappedValue: Value {
-        get { value }
+        get { self.value }
         set {
             if !self.ignoreEquality {
                 guard newValue != value else { return }
@@ -64,6 +64,6 @@ final class WeakObservableObjectPublisher {
     }
 
     func send() {
-        publisher?.send()
+        self.publisher?.send()
     }
 }
