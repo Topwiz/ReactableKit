@@ -14,9 +14,7 @@ extension Emit: @unchecked Sendable where Value: Sendable {}
 public struct Emit<Value>: CustomStringConvertible {
     
     public var value: Value {
-        didSet {
-            self.increaseCount()
-        }
+        didSet { self.increaseCount() }
     }
     
     public internal(set) var count = 0
