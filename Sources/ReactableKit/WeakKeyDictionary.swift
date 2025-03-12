@@ -12,39 +12,30 @@ import Foundation
 final class WeakKeyDictionary<Key: AnyObject, Value> {
     private var storage: [WeakReference<Key>: Value] = [:]
     private let lock = NSRecursiveLock()
-    
+
     init() {}
 
     func value(forKey key: Key) -> Value? {
-        let weakKey = WeakReference(key)
-
-        lock.lock()
-        defer {
-            lock.unlock()
-            installDeallocHook(for: key)
+        return self.lock.perform {
+            let weakKey = WeakReference(key)
+            self.installDeallocHook(for: key)
+            return self.storage[weakKey]
         }
-        
-        return storage[weakKey]
     }
 
     func value(forKey key: Key, default defaultValue: @autoclosure () -> Value) -> Value {
-        let weakKey = WeakReference(key)
-
-        lock.lock()
-        defer {
-            lock.unlock()
-            installDeallocHook(for: key)
+        return self.lock.perform {
+            let weakKey = WeakReference(key)
+            self.installDeallocHook(for: key)
+            if let existingValue = self.storage[weakKey] {
+                return existingValue
+            }
+            let newValue = defaultValue()
+            self.storage[weakKey] = newValue
+            return newValue
         }
-
-        if let existingValue = storage[weakKey] {
-            return existingValue
-        }
-
-        let newValue = defaultValue()
-        storage[weakKey] = newValue
-        return newValue
     }
-    
+
     func forceCastedValue<T>(forKey key: Key, default defaultValue: @autoclosure () -> T) -> T {
         let value = self.value(forKey: key, default: defaultValue() as! Value)
         guard let castedValue = value as? T else {
@@ -54,37 +45,40 @@ final class WeakKeyDictionary<Key: AnyObject, Value> {
     }
 
     func setValue(_ value: Value?, forKey key: Key) {
-        let weakKey = WeakReference(key)
-
-        lock.lock()
-        defer {
-            lock.unlock()
-            if let _ = value {
-                installDeallocHook(for: key)
+        self.lock.perform {
+            let weakKey = WeakReference(key)
+            if let value = value {
+                self.storage[weakKey] = value
+                self.installDeallocHook(for: key)
+            } else {
+                self.storage.removeValue(forKey: weakKey)
             }
-        }
-
-        if let value = value {
-            storage[weakKey] = value
-        } else {
-            storage.removeValue(forKey: weakKey)
         }
     }
 
     // MARK: - Dealloc Hook
-    
+
     private var deallocHookKey: Void?
 
     private func installDeallocHook(for key: Key) {
-        guard objc_getAssociatedObject(key, &deallocHookKey) == nil else { return }
+        guard objc_getAssociatedObject(key, &self.deallocHookKey) == nil else { return }
 
         let weakKey = WeakReference(key)
         let hook = DeallocHook { [weak self] in
-            self?.lock.lock()
-            self?.storage.removeValue(forKey: weakKey)
-            self?.lock.unlock()
+            self?.lock.perform {
+                self?.storage.removeValue(forKey: weakKey)
+            }
         }
-        objc_setAssociatedObject(key, &deallocHookKey, hook, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(key, &self.deallocHookKey, hook, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+}
+
+extension WeakKeyDictionary {
+    var storageCount: Int {
+        return self.lock.perform {
+            self.storage.count
+        }
     }
 }
 
@@ -100,7 +94,7 @@ private final class WeakReference<T: AnyObject>: Hashable {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(objectHashValue)
+        hasher.combine(self.objectHashValue)
     }
 
     static func == (lhs: WeakReference<T>, rhs: WeakReference<T>) -> Bool {
@@ -118,6 +112,6 @@ private final class DeallocHook {
     }
 
     deinit {
-        onDeinit()
+        self.onDeinit()
     }
 }
