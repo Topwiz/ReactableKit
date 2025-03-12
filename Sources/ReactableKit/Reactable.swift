@@ -90,8 +90,7 @@ public extension Reactable {
     @discardableResult
     func action(_ action: Action) async -> State {
         return await withUnsafeContinuation { [unowned self] continuation in
-            self.dispatch(action: action) { [weak self] result in
-                guard let self else { return }
+            self.dispatch(action: action) { result in
                 switch result {
                 case .success(let state):
                     continuation.resume(returning: state)
@@ -105,8 +104,7 @@ public extension Reactable {
     
     func actionPublish(_ action: Action) -> AnyPublisher<State, Never> {
         Future { [unowned self] promise in
-            self.dispatch(action: action) { [weak self] result in
-                guard let self else { return }
+            self.dispatch(action: action) { result in
                 if let state = result.output {
                     promise(.success(state))
                 }
