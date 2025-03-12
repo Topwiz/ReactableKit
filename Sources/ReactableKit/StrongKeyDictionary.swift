@@ -19,24 +19,20 @@ final class StrongKeyDictionary<Key: Hashable, Value> {
     init() {}
 
     func value(forKey key: Key) -> Value? {
-
-        lock.lock()
-        defer { lock.unlock() }
-        
-        return storage[key]
+        return self.lock.perform {
+            self.storage[key]
+        }
     }
 
     func value(forKey key: Key, default defaultValue: @autoclosure () -> Value) -> Value {
-        lock.lock()
-        defer { lock.unlock() }
-
-        if let existingValue = storage[key] {
-            return existingValue
+        return self.lock.perform {
+            if let existingValue = self.storage[key] {
+                return existingValue
+            }
+            let newValue = defaultValue()
+            self.storage[key] = newValue
+            return newValue
         }
-
-        let newValue = defaultValue()
-        storage[key] = newValue
-        return newValue
     }
     
     func forceCastedValue<T>(forKey key: Key, default defaultValue: @autoclosure () -> T) -> T {
@@ -48,13 +44,12 @@ final class StrongKeyDictionary<Key: Hashable, Value> {
     }
 
     func setValue(_ value: Value?, forKey key: Key) {
-        lock.lock()
-        defer { lock.unlock() }
-
-        if let value = value {
-            storage[key] = value
-        } else {
-            storage.removeValue(forKey: key)
+        self.lock.perform {
+            if let value = value {
+                self.storage[key] = value
+            } else {
+                self.storage.removeValue(forKey: key)
+            }
         }
     }
 }
