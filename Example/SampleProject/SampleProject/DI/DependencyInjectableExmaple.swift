@@ -37,7 +37,7 @@ struct FactoryTestMock: FactoryTestProtocol, Factory {
 }
 
 extension FactoryTest: DependencyInjectable {
-    typealias DependencyType = AnyFactoryProducer<Payload, FactoryTestProtocol>
+    typealias DependencyType = AnyFactory<FactoryTestProtocol, Payload>
     
     static var real: DependencyType {
         DependencyType(factory: FactoryTest.Factory())

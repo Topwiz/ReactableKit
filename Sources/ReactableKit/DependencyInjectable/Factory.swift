@@ -23,7 +23,7 @@ public struct DefaultFactory<T: Factory> {
     }
 }
 
-public struct AnyFactoryProducer<Payload, Output> {
+public struct AnyFactory<Output, Payload> {
     private let _create: (Payload) -> Output
 
     public init<F>(
@@ -41,7 +41,7 @@ public struct AnyFactoryProducer<Payload, Output> {
     }
 }
 
-public extension AnyFactoryProducer {
+public extension AnyFactory {
     init<F>(factory: DefaultFactory<F>) where F: Factory, F.Payload == Payload {
         self.init(factory: factory, transform: { value in
             guard let output = value as? Output else {
