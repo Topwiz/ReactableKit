@@ -1,10 +1,31 @@
 # 🚀 ReactableKit
 
-## ⚡ Usage
+## Table of Contents
+  - [⚡ Basic Usage](#-basic-usage)
+    - [1️⃣ Core Structure of Reactable](#1️⃣-core-structure-of-reactable)
+    - [2️⃣ Action Transformation with transformAction](#2️⃣-action-transformation-with-transformaction)
+    - [3️⃣ Integrating Reactable with SwiftUI](#3️⃣-integrating-reactable-with-swiftui)
+    - [4️⃣ updateOn: Optimizing SwiftUI Updates](#4️⃣-updateon-optimizing-swiftui-updates)
+    - [5️⃣ Dispatching Actions in Reactable](#5️⃣-dispatching-actions-in-reactable)
+- [1️⃣ Property Wrappers](#1️⃣-property-wrappers)
+    - [🎨 `@ViewState`](#-viewstate)
+    - [🔄 `@Shared`](#-shared)
+    - [📦 Using `@Emit` for State Tracking](#-using-emit-for-state-tracking)
+      - [📌 Using `@Emit` in Your State](#-using-emit-in-your-state)
+      - [📌 Subscribing to emit(\_:)](#-subscribing-to-emit_)
+      - [📌 Using `@Emit` in SwiftUI](#-using-emit-in-swiftui)
+- [2️⃣ `ObservableEvent` (Parent-Child Communication)](#2️⃣-observableevent-parent-child-communication)
+- [3️⃣ `ReactableView` Protocol](#3️⃣-reactableview-protocol)
+- [4️⃣ `DependencyInjection` and `Factory` Pattern Usage](#4️⃣-dependencyinjection-and-factory-pattern-usage)
+    - [1. DependencyInjectable](#1-dependencyinjectable)
+    - [2. Factory](#2-factory)
+    - [3. AnyFactory](#3-anyfactory)
+
+## ⚡ Basic Usage
 
 ### 1️⃣ Core Structure of Reactable
 
-To use `Reactable`, create a class conforming to the `Reactable` protocol. Define `Action`, `State`, and `Mutation`, and implement `mutate(action:)` and `reduce(state:mutate:)`.
+To use `Reactable`, you must create a class that conforms to the `Reactable` protocol. Define `Action`, `Mutation`, and `State`, and then implement `mutate(action:)` and `reduce(state:mutate:)`.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -42,9 +63,9 @@ final class CounterReactable: Reactable {
 }
 ```
 
-### 2️⃣ Transforming Actions with `transformAction`
+### 2️⃣ Action Transformation with transformAction
 
-`transformAction` enables automatic **event-based action triggers**. This is useful for handling timers, network events, or external input sources.
+`transformAction` automatically enables **event-driven action triggers**. This is useful for converting timers or other triggers into Reactable Actions.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -90,10 +111,11 @@ final class CounterReactable: Reactable {
     }
 }
 ```
+> ⚠️ If you are not using `Store`, you must manually call `registerTransform()` in the Reactable `init`.
 
 ### 3️⃣ Integrating Reactable with SwiftUI
 
-Utilize `Store` to observe state changes and dispatch `Action` within a SwiftUI view.
+Use `Store` to observe state changes and dispatch `Action` in a SwiftUI View.
 
 ```swift
 struct CounterView: View {
@@ -115,13 +137,9 @@ struct CounterView: View {
 }
 ```
 
-### 4️⃣ `updateOn`: Optimizing SwiftUI Updates
-`updateOn` is a powerful SwiftUI state observer that ensures views update only when necessary. It automatically detects whether the keyPath is a Value or Binding<Value> and prevents unnecessary UI re-renders.
+### 4️⃣ updateOn: Optimizing SwiftUI Updates
 
-#### Using updateOn for Value-Based State Updates
-When using a normal value (Int, Bool, etc.), updateOn ensures the view only updates when the value changes.
-- Ensures minimal SwiftUI re-renders
-- Uses EquatableValueView for optimal performance
+`updateOn` is a SwiftUI state observer that ensures views update only when necessary.
 
 ```swift
 struct CounterView: View {
@@ -131,28 +149,25 @@ struct CounterView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // ✅ updates UI when `count` changes. It does not update when count1 changes.
+            // ✅ The UI only updates when `count` changes. It does not update when `count1` changes.
             
             self.store.updateOn(\.count) { value in
                 Text("\(value)")
                     .font(.headline)
             }
 
-           // Always updates
-           
+            // Always updates
             Text("\(self.store.state.count1)")
                 .font(.headline)
 
-           // Binding<Value> Exmaple
-           
-           self.store.updateOn(\.isOn1) { value in
+            // Binding<Value> example
+            self.store.updateOn(\.isOn1) { value in
                 Toggle(isOn: value) {
                     Text("Toggle 1")
                 }
             }
 
-            // Binding<Value> With Action Exmaple 
-            
+            // Binding<Value> example with action
             self.store.updateOn(\.isOn1) { value in
                 Toggle(isOn: value) {
                     Text("Toggle 1 updateOn with action")
@@ -161,8 +176,7 @@ struct CounterView: View {
                 .isOnChanged
             }
             
-            // ForEach List Example
-            
+            // ForEach list example
             ForEach(self.store.state.list) { item in
                 self.store.updateOn(\.list, for: item.id) { value in
                     Text("\(value.index)")
@@ -170,8 +184,7 @@ struct CounterView: View {
                 }
             }
             
-            // ForEach List Multi View Example
-            
+            // ForEach multiple views example
             ForEach(self.store.state.list) { item in
                 HStack {
                     self.store.updateOn(\.list, for: item.id, property: \.index) { value in
@@ -193,28 +206,26 @@ struct CounterView: View {
 
 ### 5️⃣ Dispatching Actions in Reactable
 
-Reactable provides multiple ways to **send actions and track completion**.
+Reactable provides various ways to **send actions and track completion**.
 
 ```swift
-// Using async-await
+// async-await example
 let reactable = CounterReactable()
 Task {
     let state = try await reactable.action(.increase)
 }
 
-// Using Combine’s sink
+// Combine sink example
 let action = reactable.actionPublish(.increase)
     .sink { state in
         print(state)
     }
 
-// Using Completion Handler
+// Completion handler example
 reactable.action(.increase) { result in
     print(result)
 }
 ```
-
----
 
 ## 🎯 Advanced Features
 
@@ -222,20 +233,22 @@ reactable.action(.increase) { result in
 
 #### 🎨 `@ViewState`
 
-`@ViewState` ensures **automatic UI updates** when values change. Properties without `@ViewState` will not trigger UI updates.
+`@ViewState` guarantees **automatic UI updates** when values change. Properties not marked with `@ViewState` will not trigger SwiftUI updates.
 
 ```swift
 struct State {
     @ViewState var count: Int = 1
+    /// If ignoreEquality = true, SwiftUI views update even if the same value is set.
     @ViewState(ignoreEquality: true) var forceUpdate: Bool = false
 }
 ```
 
 #### 🔄 `@Shared`
 
-`@Shared` enables **state sharing** between **parent and child components**.
+`@Shared` allows **shared state** between parent and child components.
 
 ```swift
+/// The file or UserDefaults storage must conform to Codable.
 struct SharedState: Codable, Equatable {
     var username: String = ""
     var age: Int = 0
@@ -244,19 +257,20 @@ struct SharedState: Codable, Equatable {
 
 struct State {
     @Shared(.file()) var sharedState = SharedState()
-    @Shared(.file(path: "Test/")) var sharedState = SharedState() // sub folder path
+    @Shared(.file(path: "Test/")) var sharedState = SharedState() // subfolder path
     @Shared var sharedState = SharedState()
     @Shared(key: "custom_key") var sharedState = SharedState() // custom key
     @ViewState var displayInfo: String = ""
 }
 ```
 
-> ⚠️ `@Shared` does not automatically update the UI when values change.
+> ⚠️ Even if `@Shared` values change, the UI will not automatically update.
 
 #### 📦 Using `@Emit` for State Tracking
-`@Emit` ensures that **even if the value is set to the same value, it will still trigger updates**.
 
-#### 📌 Using `@Emit` in State
+`@Emit` triggers updates even when the same value is set repeatedly.
+
+#### 📌 Using `@Emit` in Your State
 
 ```swift
 struct MyState {
@@ -264,7 +278,7 @@ struct MyState {
 }
 ```
 
-#### 📌 Subscribing to `emit(_:)`
+#### 📌 Subscribing to emit(_:)
 
 ```swift
 reactable.emit(\.$title)
@@ -273,7 +287,9 @@ reactable.emit(\.$title)
     }
     .store(in: &cancellables)
 ```
+
 #### 📌 Using `@Emit` in SwiftUI
+
 ```swift
 ZStack { }
 .emit(\.$title, from: self.store) { value in
@@ -281,9 +297,9 @@ ZStack { }
 }
 ```
 
-### 2️⃣ `ObservableEvent` (Child → Parent Communication)
+### 2️⃣ `ObservableEvent` (Parent-Child Communication)
 
-`ObservableEvent` enables **child components to send actions to parent components**.
+`ObservableEvent` lets you send actions between child and parent components.
 
 ```swift
 // Child Reactable
@@ -295,7 +311,7 @@ class ChildReactable: Reactable, ObservableEvent {
 
 // Parent Reactable
 func transformAction() -> AnyPublisher<Action, Never> {
-    let childEvent = ChildReactable.observe() // observe's ChildReactable Action and changed State
+    let childEvent = ChildReactable.observe() // Observe actions and updates from ChildReactable
         .filter { result in
             if case .notifyParent = result.action { return true }
             return false
@@ -309,8 +325,9 @@ func transformAction() -> AnyPublisher<Action, Never> {
 }
 ```
 
-### 3️⃣`ReactableView` Protocol
-Use `ReactableView` Protocol on UIKit Views.
+### 3️⃣ `ReactableView` Protocol
+
+Use the `ReactableView` protocol in UIKit views.
 
 ```swift
 final class UIKitView: UIView {
@@ -323,20 +340,20 @@ final class UIKitView: UIView {
 }
 
 extension UIKitView: ReactableView { 
-    // Call's when self.reactable is set.
+    // Called when self.reactable is set
     func bind(reactable: UIKitReactable) { 
 
     }
 }
 ```
 
-### 4️⃣ Dependency Injection & Factory Pattern Usage
+## 4️⃣ `DependencyInjection` and `Factory` Pattern Usage
 
-This project uses a lightweight dependency injection system combined with a factory pattern to simplify object creation and dependency management across different environments (real, preview, test).
+Combine the dependency injection system with factory patterns to simplify object creation and dependency management in real, preview, and test environments.
 
 ### 1. DependencyInjectable
 
-`DependencyInjectable` is a protocol that allows types to define their dependencies for different environments. It includes an associated type `DependencyType` and static properties for `real`, `preview`, and `test` environments.
+The `DependencyInjectable` protocol allows types to define dependencies for different environments.
 
 ```swift
 public protocol DependencyInjectable {
@@ -347,7 +364,7 @@ public protocol DependencyInjectable {
 }
 ```
 
-#### Example: 
+#### Example:
 
 ```swift
 protocol ServiceProtocol {
@@ -355,7 +372,7 @@ protocol ServiceProtocol {
 }
 
 struct Service: ServiceProtocol {
-     func test() -> String { "real" }
+    func test() -> String { "real" }
     
     struct Mock: ServiceProtocol {
         public init() {}
@@ -418,13 +435,13 @@ extension GlobalDependencyKey {
 @Dependency(\.testObjectFactory) var testObjectFactory
 ```
 
-### 2. AnyFactoryProducer
+### 3. AnyFactory
 
-`AnyFactoryProducer` is a generic wrapper that abstracts the creation process. It accepts a `Factory` and a transformation closure that converts the created instance into the desired output type.
-
+`AnyFactory` is a generic wrapper that abstracts the object creation process.
+After creating the object via a factory, you can convert it to your desired output type using a transform closure.
 
 ```swift
-// Define the protocol for testing
+// Define a protocol for testing
 protocol FactoryTestProtocol {
     func test() -> String
 }
@@ -452,9 +469,9 @@ struct FactoryTestMock: FactoryTestProtocol, Factory {
     func test() -> String { "mock \(payload)" }
 }
 
-// Conform FactoryTest to DependencyInjectable using AnyFactoryProducer
+// Conform FactoryTest to DependencyInjectable using AnyFactory
 extension FactoryTest: DependencyInjectable {
-    typealias DependencyType = AnyFactoryProducer<Payload, FactoryTestProtocol>
+    typealias DependencyType = AnyFactory<FactoryTestProtocol, Payload>
     
     static var real: DependencyType {
         DependencyType(factory: FactoryTest.Factory())

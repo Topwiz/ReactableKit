@@ -1,10 +1,31 @@
 # 🚀 ReactableKit
 
-## ⚡ 사용법
+## 목차
+- [⚡ 기본 사용법](#-기본-사용법)
+    - [1️⃣ Reactable의 핵심 구조](#1️⃣-reactable의-핵심-구조)
+    - [2️⃣ `transformAction`을 통한 액션 변환](#2️⃣-transformaction을-통한-액션-변환)
+    - [3️⃣ SwiftUI와의 Reactable 통합](#3️⃣-swiftui와의-reactable-통합)
+    - [4️⃣ `updateOn`: SwiftUI 업데이트 최적화](#4️⃣-updateon-swiftui-업데이트-최적화)
+    - [5️⃣ Reactable에서 액션 디스패치](#5️⃣-reactable에서-액션-디스패치)
+- [1️⃣ 프로퍼티 래퍼](#1️⃣-프로퍼티-래퍼)
+    - [🎨 `@ViewState`](#-viewstate)
+    - [🔄 `@Shared`](#-shared)
+    - [📦 상태 추적을 위한 `@Emit` 사용](#-상태-추적을-위한-emit-사용)
+      - [📌 상태에서 `@Emit` 사용하기](#-상태에서-emit-사용하기)
+      - [📌 `emit(_:)` 구독하기](#-emit_-구독하기)
+      - [📌 SwiftUI에서 `@Emit` 사용하기](#-swiftui에서-emit-사용하기)
+- [2️⃣ `ObservableEvent` (부모 자식간 통신)](#2️⃣-observableevent-부모-자식간-통신)
+- [3️⃣ `ReactableView` 프로토콜](#3️⃣-reactableview-프로토콜)
+- [4️⃣ `DependencyInjectable` & `Factory` 패턴 사용법](#4️⃣-dependencyinjectable-and-factory-패턴-사용법)
+    - [1. DependencyInjectable](#1-dependencyinjectable)
+    - [2. Factory](#2-factory)
+    - [3. AnyFactory](#3-anyfactory)
+
+## ⚡ 기본 사용법
 
 ### 1️⃣ Reactable의 핵심 구조
 
-`Reactable`을 사용하려면 `Reactable` 프로토콜을 준수하는 클래스를 생성하세요. `Action`, `State`, `Mutation`을 정의하고, `mutate(action:)`와 `reduce(state:mutate:)`를 구현합니다.
+`Reactable`을 사용하려면 `Reactable` 프로토콜을 준수하는 클래스를 생성하세요. `Action`, `Mutation`, `State`을 정의하고, `mutate(action:)`와 `reduce(state:mutate:)`를 구현합니다.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -44,7 +65,7 @@ final class CounterReactable: Reactable {
 
 ### 2️⃣ `transformAction`을 통한 액션 변환
 
-`transformAction`은 자동으로 **이벤트 기반 액션 트리거**를 활성화합니다. 이는 타이머, 네트워크 이벤트 또는 외부 입력 소스를 처리하는 데 유용합니다.
+`transformAction`은 자동으로 **이벤트 기반 액션 트리거**를 활성화합니다. 이는 타이머, 각종 액션을 Reactable Action으로 변환하는데 유용합니다.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -90,6 +111,7 @@ final class CounterReactable: Reactable {
     }
 }
 ```
+> ⚠️ `Store`을 사용하지 않는다면 Reactable `init`에 수동으로 `registerTransform()`을 불러줘야 합니다.
 
 ### 3️⃣ SwiftUI와의 Reactable 통합
 
@@ -116,12 +138,7 @@ struct CounterView: View {
 ```
 
 ### 4️⃣ `updateOn`: SwiftUI 업데이트 최적화
-`updateOn`은 강력한 SwiftUI 상태 관찰자로, 뷰가 필요한 경우에만 업데이트되도록 보장합니다. 이 메서드는 keyPath가 일반 값(Value) 또는 Binding<Value>인지 자동으로 감지하여 불필요한 UI 리렌더링을 방지합니다.
-
-#### 일반 값 기반 상태 업데이트에 updateOn 사용하기
-일반 값(Int, Bool 등)을 사용할 때, updateOn은 값이 변경될 때만 뷰를 업데이트합니다.
-- 최소한의 SwiftUI 리렌더링 보장
-- 최적 성능을 위해 EquatableValueView 사용
+`updateOn`은 SwiftUI 상태 관찰자로, 뷰가 필요한 경우에만 업데이트되도록 보장합니다.
 
 ```swift
 struct CounterView: View {
@@ -214,19 +231,16 @@ reactable.action(.increase) { result in
 }
 ```
 
----
-
-## 🎯 Advanced Features
-
 ### 1️⃣ 프로퍼티 래퍼
 
 #### 🎨 `@ViewState`
 
-`@ViewState`는 값이 변경될 때 **자동 UI 업데이트**를 보장합니다. `@ViewState`가 없는 프로퍼티는 UI 업데이트를 트리거하지 않습니다.
+`@ViewState`는 값이 변경될 때 **자동 UI 업데이트**를 보장합니다. `@ViewState`가 없는 프로퍼티는 SwiftUI 업데이트를 트리거하지 않습니다.
 
 ```swift
 struct State {
     @ViewState var count: Int = 1
+    /// ignoreEquality = true 인 경우는 같은 값이 set이 되면 SwiftUI View가 업데이트 됩니다.
     @ViewState(ignoreEquality: true) var forceUpdate: Bool = false
 }
 ```
@@ -236,6 +250,7 @@ struct State {
 `@Shared`는 **부모와 자식 컴포넌트 간의 상태 공유**를 가능하게 합니다.
 
 ```swift
+/// file, UserDefailt 저장소는 Codable를 준수 해야합니다.
 struct SharedState: Codable, Equatable {
     var username: String = ""
     var age: Int = 0
@@ -282,9 +297,9 @@ ZStack { }
 }
 ```
 
-### 2️⃣ `ObservableEvent` (자식 → 부모 통신)
+### 2️⃣ `ObservableEvent` (부모 자식간 통신)
 
-`ObservableEvent`는 **자식 컴포넌트가 부모 컴포넌트로 액션을 전송**할 수 있게 해줍니다.
+`ObservableEvent`는 **자식 컴포넌트와 부모 컴포넌트간 액션을 전송**할 수 있게 해줍니다.
 
 ```swift
 // 자식 Reactable
@@ -330,9 +345,10 @@ extension UIKitView: ReactableView {
     }
 }
 ```
-### 4️⃣ 의존성 주입 및 팩토리 패턴 사용법
 
-경량 의존성 주입 시스템과 팩토리 패턴을 결합하여, real, preview, test 환경에서 객체 생성 및 의존성 관리를 간소화합니다.
+## 4️⃣ `DependencyInjectable` & `Factory` 패턴 사용법
+
+의존성 주입 시스템과 팩토리 패턴을 결합하여, real, preview, test 환경에서 객체 생성 및 의존성 관리를 간소화합니다.
 
 ### 1. DependencyInjectable
 
@@ -418,10 +434,10 @@ extension GlobalDependencyKey {
 @Dependency(\.testObjectFactory) var testObjectFactory
 ```
 
-### 2. AnyFactoryProducer
+### 3. AnyFactory
 
-`AnyFactoryProducer`는 객체 생성 과정을 추상화하는 제네릭 래퍼입니다.
-Factory를 이용하여 객체를 생성한 후, 변환 클로저를 통해 원하는 출력 타입(Output)으로 변환합니다.
+`AnyFactory`는 객체 생성 과정을 추상화하는 제네릭 래퍼입니다.
+Factory를 이용하여 객체를 생성한 후, 변환 클로저를 통해 원하는 출력 타입으로 변환합니다.
 
 
 ```swift
@@ -453,9 +469,9 @@ struct FactoryTestMock: FactoryTestProtocol, Factory {
     func test() -> String { "mock \(payload)" }
 }
 
-// Conform FactoryTest to DependencyInjectable using AnyFactoryProducer
+// Conform FactoryTest to DependencyInjectable using AnyFactory
 extension FactoryTest: DependencyInjectable {
-    typealias DependencyType = AnyFactoryProducer<Payload, FactoryTestProtocol>
+    typealias DependencyType = AnyFactory<FactoryTestProtocol, Payload>
     
     static var real: DependencyType {
         DependencyType(factory: FactoryTest.Factory())

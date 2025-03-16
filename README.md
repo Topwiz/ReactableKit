@@ -2,14 +2,13 @@
 
 ## 📌 Introduction
 
-**ReactableKit** is a lightweight yet powerful **state management** framework designed with **Combine** and for **SwiftUI** applications. Created with references to **ReactorKit** and **TCA**, it offers a structured approach that efficiently handles **business logic** and **state transformations**.
+**ReactableKit** is a lightweight yet powerful **state management** framework designed with **Combine** and for **SwiftUI** applications. It offers a structured approach that efficiently handles **business logic** and **state transformations**, based on the architecture of **ReactorKit**.
 
 ## 📋 Requirements
 
 - ✅ iOS 15.0+
 - ✅ Swift 5+
 
----
 
 ## ⚡ Usage
 
@@ -17,12 +16,10 @@
 - **한국어:** [README](README/README_ko.md)
 
 
----
 
 ## 🏗️ Roadmap
-- [ ] ✅ Unit Testing
+- [ ] 💻 Mac Support
 - [ ] 🚀 Performance Optimizations
-- [ ] 📖 Additional Documentation & Examples
 
 ## 🔗 References
 
