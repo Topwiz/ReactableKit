@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import ReactableKit
+import DependencyInjectableKit
 
 struct CounterView: View {
     @ObservedObject var store = Store(CounterReactable())

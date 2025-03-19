@@ -8,6 +8,7 @@
 import Foundation
 import ReactableKit
 import Combine
+import DependencyInjectableKit
 
 extension CounterReactable: @unchecked Sendable { }
 

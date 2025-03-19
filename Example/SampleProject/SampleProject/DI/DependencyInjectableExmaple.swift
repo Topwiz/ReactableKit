@@ -7,6 +7,7 @@
 
 import Foundation
 import ReactableKit
+import DependencyInjectableKit
 
 // MARK: - Factory Exmaple
 
