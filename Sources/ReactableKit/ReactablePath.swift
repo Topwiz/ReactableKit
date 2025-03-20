@@ -135,15 +135,30 @@ public extension NavigationLink {
 @available(iOS 16.0, *)
 public final class LazyAnyPathState: PathState, Hashable {
     private let baseClosure: () -> (any PathState)
-    private lazy var cached: any PathState = baseClosure()
+    private var _cached: WeakWrapper?
     private let identifier: UUID = UUID()
+    
+    private class WeakWrapper {
+        weak var value: AnyObject?
+        init(_ value: AnyObject) {
+            self.value = value
+        }
+    }
     
     public init<S: PathState>(_ baseClosure: @escaping () -> S) {
         self.baseClosure = baseClosure
     }
     
     public func getBase() -> any PathState {
-        self.cached
+        if let cached = self._cached?.value as? any PathState {
+            return cached
+        } else {
+            let newValue = self.baseClosure()
+            if let obj = newValue as? AnyObject {
+                self._cached = WeakWrapper(obj)
+            }
+            return newValue
+        }
     }
     
     public func hash(into hasher: inout Hasher) {
