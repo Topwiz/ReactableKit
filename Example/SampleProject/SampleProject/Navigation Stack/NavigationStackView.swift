@@ -24,19 +24,27 @@ struct NavigationStackView: View {
                     Text("Stored Counter")
                 }
                 
-                NavigationLink(reactable: BindingReactable()) {
+                NavigationLink {
+                    BindingReactable()
+                } label: {
                     Text("[NavigationLink] Binding")
                 }
                 
-                NavigationLink(reactable: SharedStateReactable()) {
+                NavigationLink {
+                    SharedStateReactable()
+                } label: {
                     Text("[NavigationLink] SharedStateReactable")
                 }
                 
-                NavigationLink(reactable: UIKitExampleReactable()) {
+                NavigationLink {
+                    UIKitExampleReactable()
+                } label: {
                     Text("[NavigationLink] UIKitExample")
                 }
                 
-                NavigationLink(reactable: ForEachReactable()) {
+                NavigationLink {
+                    ForEachReactable()
+                } label: {
                     Text("[NavigationLink] ForEach")
                 }
             }

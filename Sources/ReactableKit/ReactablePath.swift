@@ -10,6 +10,7 @@ import SwiftUI
 
 public protocol PathState: Hashable { }
 
+@available(iOS 16.0, *)
 public struct AnyPathState: PathState, Hashable {
     private let base: any PathState
     private let identifier: AnyHashable
@@ -113,6 +114,9 @@ public struct _NavigationDestinationViewModifier<Destination: View>: ViewModifie
             .navigationDestination(for: AnyPathState.self) { navigateReactable in
                 self.destination(navigateReactable.getBase())
             }
+            .navigationDestination(for: LazyAnyPathState.self) { navigateReactable in
+                self.destination(navigateReactable.getBase())
+            }
     }
 }
 
@@ -123,5 +127,42 @@ public extension NavigationLink {
         @ViewBuilder label: @escaping () -> Label
     ) where Destination == Never {
         self.init(value: AnyPathState(reactable), label: label)
+    }
+}
+
+// MARK: - LazyAnyPathState
+
+@available(iOS 16.0, *)
+public final class LazyAnyPathState: PathState, Hashable {
+    private let baseClosure: () -> (any PathState)
+    private lazy var cached: any PathState = baseClosure()
+    private let identifier: UUID = UUID()
+    
+    public init<S: PathState>(_ baseClosure: @escaping () -> S) {
+        self.baseClosure = baseClosure
+    }
+    
+    public func getBase() -> any PathState {
+        self.cached
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.identifier)
+    }
+    
+    public static func == (lhs: LazyAnyPathState, rhs: LazyAnyPathState) -> Bool {
+        lhs.identifier == rhs.identifier
+    }
+}
+
+
+
+@available(iOS 16.0, *)
+public extension NavigationLink {
+    init<S: PathState>(
+        reactable: @escaping () -> S,
+        @ViewBuilder label: @escaping () -> Label
+    ) where Destination == Never {
+        self.init(value: LazyAnyPathState(reactable), label: label)
     }
 }
