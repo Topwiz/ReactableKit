@@ -14,35 +14,39 @@ protocol PublishedWrapper {
 }
 
 @propertyWrapper
-public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, PublishedWrapper, CustomStringConvertible {
-    @Atomic private var value: Value
+public final class ViewState<Value: Equatable>: @unchecked Sendable, CustomStringConvertible, PublishedWrapper {
+    @Atomic private var _value: Value
     private var ignoreEquality: Bool
     private var onChange: (() -> Void)?
-    
+
     public var wrappedValue: Value {
-        get { self.value }
+        get { self._value }
         set {
             if !self.ignoreEquality {
-                guard newValue != value else { return }
+                guard self._value != newValue else { return }
             }
-            self.value = newValue
+            self._value = newValue
             self.onChange?()
         }
     }
     
     public var projectedValue: Binding<Value> {
         Binding(
-            get: { self.value },
-            set: { self.value = $0 }
+            get: { self._value },
+            set: { self._value = $0 }
         )
     }
     
     public var description: String {
         "\(self.wrappedValue)"
     }
-    
+
+    /// A property wrapper that manages a state value and notifies changes.
+    /// - Parameters:
+    ///   - ignoreEquality: A Boolean value that indicates whether to ignore equality checks when updating the state. Default is `false`.
+    /// - Warning: Setting `ignoreEquality` to `true` may cause unnecessary updates to the SwiftUI view.
     public init(wrappedValue: Value, ignoreEquality: Bool = false) {
-        self.value = wrappedValue
+        self._value = wrappedValue
         self.ignoreEquality = ignoreEquality
     }
     
@@ -51,19 +55,7 @@ public class ViewState<Value: Equatable>: @unchecked Sendable, Equatable, Publis
     }
     
     public static func == (lhs: ViewState<Value>, rhs: ViewState<Value>) -> Bool {
-        lhs.value == rhs.value
+        lhs._value == rhs._value
     }
     
-}
-
-final class WeakObservableObjectPublisher {
-    weak var publisher: ObservableObjectPublisher?
-
-    init(_ publisher: ObservableObjectPublisher?) {
-        self.publisher = publisher
-    }
-
-    func send() {
-        self.publisher?.send()
-    }
 }
