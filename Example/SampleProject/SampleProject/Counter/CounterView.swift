@@ -11,8 +11,11 @@ import ReactableKit
 import DependencyInjectableKit
 
 struct CounterView: View {
-    @ObservedObject var store = Store(CounterReactable())
-    @ViewDependency(\.service) var service
+    @ObservedObject var store: Store<CounterReactable>
+    
+    init(reactable: CounterReactable) {
+        self.store = Store(reactable)
+    }
     
     var body: some View {
         HStack(spacing: 20) {
@@ -36,32 +39,12 @@ struct CounterView: View {
                     }
                 }
             }
-            
-            
-            VStack {
-                self.store.updateOn(\.count1) { value in
-                    Text("\(value)")
-                        .font(.headline)
-                }
-                
-                HStack(spacing: 20) {
-                    Button {
-                        self.store.action(.runTest)
-                    } label: {
-                        Text("run test")
-                    }
-                }
-            }
-            
-        }
-        .onAppear {
-            let t = service.test()
         }
     }
 }
 
 #Preview {
-    CounterView()
+    CounterView(reactable: .init())
 }
 
 extension Color {

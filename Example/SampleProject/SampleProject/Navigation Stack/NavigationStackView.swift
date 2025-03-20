@@ -17,7 +17,7 @@ struct NavigationStackView: View {
                 Button {
                     self.store.action(.pushCounter)
                 } label: {
-                    Text("New Counter")
+                    Text("Basic Counter")
                 }
                 
                 NavigationLink(reactable: self.store.state.counterReactable) {
@@ -51,7 +51,7 @@ struct NavigationStackView: View {
         } destination: { reactable in
             switch reactable {
             case let reactable as CounterReactable:
-                CounterView(store: Store(reactable))
+                CounterView(reactable: reactable)
                 
             case let reactable as BindingReactable:
                 BindingView(store: Store(reactable))

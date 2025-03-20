@@ -152,10 +152,10 @@
 				A1F2B8232D48F52A009391A2 /* Shared */,
 				A1F2B81B2D460200009391A2 /* Binding View */,
 				A1F2B81A2D45FE20009391A2 /* Navigation Stack */,
-				A1F2B8062D433508009391A2 /* Counter */,
 				A1F2B8082D433508009391A2 /* Preview Content */,
 				A1F2B8092D433508009391A2 /* Assets.xcassets */,
 				A1F2B80B2D433508009391A2 /* ExmapleApp.swift */,
+				A1F2B8062D433508009391A2 /* Counter */,
 			);
 			path = SampleProject;
 			sourceTree = "<group>";
