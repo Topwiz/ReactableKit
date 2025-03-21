@@ -199,36 +199,24 @@ final class TaskHolder: @unchecked Sendable {
 public extension AnyPublisher where Output: Sendable, Failure == Never {
     
     static func run(
-        on queue: DispatchQueue? = nil,
-        _ operation: @escaping @Sendable (@Sendable (Output) async -> Void) async -> Void
+        on queue: DispatchQueue = .main,
+        _ operation: @escaping (@Sendable (Output) async -> Void) async -> Void
     ) -> AnyPublisher<Output, Never> {
         Deferred {
             let subject = PassthroughSubject<Output, Never>()
             let taskHolder = TaskHolder()
-            let op: @Sendable (@Sendable (Output) async -> Void) async -> Void = operation
+            let op: (@Sendable (Output) async -> Void) async -> Void = operation
             
             return subject
                 .handleEvents(
                     receiveSubscription: { _ in
-                        if let queue = queue {
-                            queue.async {
-                                taskHolder.task = Task {
-                                    await op { output in
-                                        guard !Task.isCancelled else { return }
-                                        subject.send(output)
-                                    }
-                                    subject.send(completion: .finished)
+                        queue.async {
+                            taskHolder.task = Task { [op] in
+                                await op { output in
+                                    guard !Task.isCancelled else { return }
+                                    subject.send(output)
                                 }
-                            }
-                        } else {
-                            DispatchQueue.main.async {
-                                taskHolder.task = Task {
-                                    await op { output in
-                                        guard !Task.isCancelled else { return }
-                                        subject.send(output)
-                                    }
-                                    subject.send(completion: .finished)
-                                }
+                                subject.send(completion: .finished)
                             }
                         }
                     },
