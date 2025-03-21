@@ -17,11 +17,13 @@ struct NavigationStackView: View {
                 Button {
                     self.store.action(.pushCounter)
                 } label: {
-                    Text("Basic Counter")
+                    Text("Basic Counter Example")
                 }
                 
-                NavigationLink(reactable: self.store.state.counterReactable) {
-                    Text("Stored Counter")
+                NavigationLink {
+                    AsyncAwaitReactable()
+                } label: {
+                    Text("Async Await Example")
                 }
                 
                 NavigationLink {
@@ -64,6 +66,9 @@ struct NavigationStackView: View {
                 
             case let reactable as ForEachReactable:
                 ForEachView(store: Store(reactable))
+                
+            case let reactable as AsyncAwaitReactable:
+                AsyncAwaitView(reactable: reactable)
                 
             default:
                 EmptyView()

@@ -18,7 +18,6 @@ final class NavigationStackReactable: Reactable {
     
     struct State {
         @ViewState var path: ReactablePath = .init()
-        var counterReactable = CounterReactable()
     }
     
     enum Mutation {

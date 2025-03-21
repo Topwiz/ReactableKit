@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
 		A18CED002D8B1EEB00AF84BD /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A18CECFF2D8B1EEB00AF84BD /* ReactableKit */; };
+		A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */; };
+		A18CED0E2D8D036200AF84BD /* AsyncAwaitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */; };
 		A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */; };
 		A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */; };
 		A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
@@ -41,6 +43,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitReactable.swift; sourceTree = "<group>"; };
+		A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitView.swift; sourceTree = "<group>"; };
 		A1AC02292D432F870021693D /* ExmapleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExmapleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachReactable.swift; sourceTree = "<group>"; };
 		A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachView.swift; sourceTree = "<group>"; };
@@ -90,6 +94,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A18CED0A2D8D033700AF84BD /* Async Await */ = {
+			isa = PBXGroup;
+			children = (
+				A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */,
+				A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */,
+			);
+			path = "Async Await";
+			sourceTree = "<group>";
+		};
 		A1AC02202D432F870021693D = {
 			isa = PBXGroup;
 			children = (
@@ -155,6 +168,7 @@
 				A1F2B8082D433508009391A2 /* Preview Content */,
 				A1F2B8092D433508009391A2 /* Assets.xcassets */,
 				A1F2B80B2D433508009391A2 /* ExmapleApp.swift */,
+				A18CED0A2D8D033700AF84BD /* Async Await */,
 				A1F2B8062D433508009391A2 /* Counter */,
 			);
 			path = SampleProject;
@@ -323,6 +337,7 @@
 				A1F2B8142D433524009391A2 /* CounterReactable.swift in Sources */,
 				A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */,
 				A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */,
+				A18CED0E2D8D036200AF84BD /* AsyncAwaitView.swift in Sources */,
 				A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */,
 				A1F2B81D2D460217009391A2 /* BindingView.swift in Sources */,
 				A1F2B83E2D4FA3AE009391A2 /* UIKitExample.swift in Sources */,
@@ -331,6 +346,7 @@
 				A1F2B8192D433E5D009391A2 /* NavigationStackReactable.swift in Sources */,
 				A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */,
 				A1F2B8122D43351D009391A2 /* CounterView.swift in Sources */,
+				A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */,
 				A1F2B81F2D46021D009391A2 /* BindingReactable.swift in Sources */,
 				A1F2B82E2D49D4CF009391A2 /* ManagerSampleReactable.swift in Sources */,
 			);
