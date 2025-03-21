@@ -11,6 +11,11 @@
 		A18CED002D8B1EEB00AF84BD /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A18CECFF2D8B1EEB00AF84BD /* ReactableKit */; };
 		A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */; };
 		A18CED0E2D8D036200AF84BD /* AsyncAwaitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */; };
+		A18CED1A2D8D781000AF84BD /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED192D8D781000AF84BD /* TodoListView.swift */; };
+		A18CED1C2D8D785700AF84BD /* TodoListReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED1B2D8D785700AF84BD /* TodoListReactable.swift */; };
+		A18CED232D8D78E600AF84BD /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED222D8D78E600AF84BD /* TodoItem.swift */; };
+		A18CED292D8D7D3A00AF84BD /* TodoAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED282D8D7D3A00AF84BD /* TodoAddView.swift */; };
+		A18CED2B2D8D7D4000AF84BD /* TodoAddReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED2A2D8D7D4000AF84BD /* TodoAddReactable.swift */; };
 		A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */; };
 		A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */; };
 		A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
@@ -45,6 +50,11 @@
 /* Begin PBXFileReference section */
 		A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitReactable.swift; sourceTree = "<group>"; };
 		A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitView.swift; sourceTree = "<group>"; };
+		A18CED192D8D781000AF84BD /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
+		A18CED1B2D8D785700AF84BD /* TodoListReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListReactable.swift; sourceTree = "<group>"; };
+		A18CED222D8D78E600AF84BD /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
+		A18CED282D8D7D3A00AF84BD /* TodoAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoAddView.swift; sourceTree = "<group>"; };
+		A18CED2A2D8D7D4000AF84BD /* TodoAddReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoAddReactable.swift; sourceTree = "<group>"; };
 		A1AC02292D432F870021693D /* ExmapleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExmapleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachReactable.swift; sourceTree = "<group>"; };
 		A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachView.swift; sourceTree = "<group>"; };
@@ -103,6 +113,42 @@
 			path = "Async Await";
 			sourceTree = "<group>";
 		};
+		A18CED132D8D766F00AF84BD /* Todo */ = {
+			isa = PBXGroup;
+			children = (
+				A18CED272D8D7D3200AF84BD /* TodoAddView */,
+				A18CED212D8D78DB00AF84BD /* Model */,
+				A18CED182D8D780800AF84BD /* TodoListView */,
+			);
+			path = Todo;
+			sourceTree = "<group>";
+		};
+		A18CED182D8D780800AF84BD /* TodoListView */ = {
+			isa = PBXGroup;
+			children = (
+				A18CED192D8D781000AF84BD /* TodoListView.swift */,
+				A18CED1B2D8D785700AF84BD /* TodoListReactable.swift */,
+			);
+			path = TodoListView;
+			sourceTree = "<group>";
+		};
+		A18CED212D8D78DB00AF84BD /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				A18CED222D8D78E600AF84BD /* TodoItem.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		A18CED272D8D7D3200AF84BD /* TodoAddView */ = {
+			isa = PBXGroup;
+			children = (
+				A18CED282D8D7D3A00AF84BD /* TodoAddView.swift */,
+				A18CED2A2D8D7D4000AF84BD /* TodoAddReactable.swift */,
+			);
+			path = TodoAddView;
+			sourceTree = "<group>";
+		};
 		A1AC02202D432F870021693D = {
 			isa = PBXGroup;
 			children = (
@@ -158,6 +204,7 @@
 		A1F2B80C2D433508009391A2 /* SampleProject */ = {
 			isa = PBXGroup;
 			children = (
+				A18CED132D8D766F00AF84BD /* Todo */,
 				A1EF005B2D6FF046009BAED9 /* DI */,
 				A1CED20A2D5E3C50006A2F9E /* ForEach  */,
 				A1F2B83C2D4FA382009391A2 /* UIKitExample */,
@@ -335,16 +382,21 @@
 				A1F2B8252D48F543009391A2 /* SharedStateReactable.swift in Sources */,
 				A1F2B8272D48F54D009391A2 /* SharedStateView.swift in Sources */,
 				A1F2B8142D433524009391A2 /* CounterReactable.swift in Sources */,
+				A18CED1A2D8D781000AF84BD /* TodoListView.swift in Sources */,
+				A18CED232D8D78E600AF84BD /* TodoItem.swift in Sources */,
 				A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */,
 				A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */,
 				A18CED0E2D8D036200AF84BD /* AsyncAwaitView.swift in Sources */,
 				A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */,
 				A1F2B81D2D460217009391A2 /* BindingView.swift in Sources */,
+				A18CED1C2D8D785700AF84BD /* TodoListReactable.swift in Sources */,
 				A1F2B83E2D4FA3AE009391A2 /* UIKitExample.swift in Sources */,
+				A18CED292D8D7D3A00AF84BD /* TodoAddView.swift in Sources */,
 				A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */,
 				A1F2B82B2D499D70009391A2 /* SharedStateChildReactable.swift in Sources */,
 				A1F2B8192D433E5D009391A2 /* NavigationStackReactable.swift in Sources */,
 				A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */,
+				A18CED2B2D8D7D4000AF84BD /* TodoAddReactable.swift in Sources */,
 				A1F2B8122D43351D009391A2 /* CounterView.swift in Sources */,
 				A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */,
 				A1F2B81F2D46021D009391A2 /* BindingReactable.swift in Sources */,
