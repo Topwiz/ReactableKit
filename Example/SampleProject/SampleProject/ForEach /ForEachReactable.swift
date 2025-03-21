@@ -36,8 +36,8 @@ final class ForEachReactable: Reactable, PathState {
         return .just(.bypass(action))
     }
     
-    func reduce(state: inout State, mutate: Mutation) {
-        switch mutate {
+    func reduce(state: inout State, mutation: Mutation) {
+        switch mutation {
         case .bypass(.changeLeft):
             state.leftList[Int.random(in: 0..<state.leftList.count)] = .init(index: Int.random(in: 0..<100))
             

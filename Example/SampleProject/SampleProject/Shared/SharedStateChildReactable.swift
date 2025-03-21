@@ -54,8 +54,8 @@ final class SharedStateChildReactable: Reactable, PathState, ObservableEvent {
         }
     }
     
-    func reduce(state: inout State, mutate: Mutation) {
-        switch mutate {
+    func reduce(state: inout State, mutation: Mutation) {
+        switch mutation {
         case let .setName(name):
             state.name = name
             

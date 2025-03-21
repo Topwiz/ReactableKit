@@ -33,8 +33,8 @@ final class NavigationStackReactable: Reactable {
         }
     }
     
-    func reduce(state: inout State, mutate: Mutation) {
-        switch mutate {
+    func reduce(state: inout State, mutation: Mutation) {
+        switch mutation {
         case let .push(_state):
             state.path.append(_state)
         }

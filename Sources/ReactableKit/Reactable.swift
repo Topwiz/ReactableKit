@@ -30,7 +30,7 @@ public protocol Reactable: AnyObject, IdentityHashable {
     
     func action(_ action: Action) async -> State
     func mutate(action: Action) -> AnyPublisher<Mutation, Never>
-    func reduce(state: inout State, mutate: Mutation)
+    func reduce(state: inout State, mutation: Mutation)
     func registerTransform()
     func transformAction() -> AnyPublisher<Action, Never>
 }
@@ -59,7 +59,7 @@ public extension Reactable {
         Empty<Mutation, Never>().eraseToAnyPublisher()
     }
     
-    func reduce(state: inout State, mutate: Mutation) { }
+    func reduce(state: inout State, mutation: Mutation) { }
     
     func transformAction() -> AnyPublisher<Action, Never> {
         Empty<Action, Never>().eraseToAnyPublisher()
@@ -121,7 +121,7 @@ public extension Reactable {
             .scan(self.currentState) { [weak self] currentState, mutation -> State in
                 guard let self else { return currentState }
                 var newState = self.currentState
-                self.reduce(state: &newState, mutate: mutation)
+                self.reduce(state: &newState, mutation: mutation)
                 self.setState(newState)
                 return newState
             }
@@ -165,7 +165,7 @@ public extension Reactable {
             .sink(receiveValue: { [weak self] mutation in
                 guard let self = self else { return }
                 var currentState = self.currentState
-                self.reduce(state: &currentState, mutate: mutation)
+                self.reduce(state: &currentState, mutation: mutation)
                 self.setState(currentState)
             })
         

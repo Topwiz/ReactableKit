@@ -47,8 +47,8 @@ final class AsyncAwaitReactable: Reactable, PathState {
         }
     }
     
-    func reduce(state: inout State, mutate: Mutation) {
-        switch mutate {
+    func reduce(state: inout State, mutation: Mutation) {
+        switch mutation {
         case let .setCount(value):
             state.count = value
         }

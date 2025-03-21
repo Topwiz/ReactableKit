@@ -39,8 +39,8 @@ final class UIKitExampleReactable: Reactable, PathState {
         }
     }
     
-    func reduce(state: inout State, mutate: Mutation) {
-        switch mutate {
+    func reduce(state: inout State, mutation: Mutation) {
+        switch mutation {
         case let .setTitle(title):
             state.title = title
             
