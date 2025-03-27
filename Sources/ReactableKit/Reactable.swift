@@ -162,6 +162,7 @@ public extension Reactable {
             }
         
         let cancellable = mutationPublisher
+            .receive(on: self.queue)
             .sink(receiveValue: { [weak self] mutation in
                 guard let self = self else { return }
                 var currentState = self.currentState
