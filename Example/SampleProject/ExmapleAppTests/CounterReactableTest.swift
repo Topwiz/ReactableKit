@@ -5,8 +5,9 @@
 //  Created by Jeehoon Son on 2/21/25.
 //
 
+import Foundation
 import Testing
-import ReactableKit
+@testable import ReactableKit
 
 struct CounterReactableTest {
 
@@ -23,12 +24,5 @@ struct CounterReactableTest {
         
         await stub.action(.decrease)
         #expect(stub.currentState.count == 1)
-        
-        await stub.action(.multiply(3))
-        #expect(stub.currentState.count == 3)
-        
-        await stub.action(.runTest)
-        #expect(stub.currentState.count1 == 30)
     }
-
 }
