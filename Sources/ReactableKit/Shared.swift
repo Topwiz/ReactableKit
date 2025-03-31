@@ -25,7 +25,7 @@ extension Shared: @unchecked Sendable where Value: Sendable {}
 public struct Shared<Value: Equatable>: CustomStringConvertible {
     private let key: String
     private let storage: StorageType
-    private let subject: CurrentValueSubject<Value, Never>
+    fileprivate let subject: CurrentValueSubject<Value, Never>
     
     public var wrappedValue: Value {
         get { subject.value }
@@ -168,6 +168,12 @@ public struct Shared<Value: Equatable>: CustomStringConvertible {
         }
 
         return folderURL.appendingPathComponent("\(key).json")
+    }
+}
+
+extension Shared: Equatable {
+    public static func == (lhs: Shared<Value>, rhs: Shared<Value>) -> Bool {
+        lhs.subject === rhs.subject
     }
 }
 
