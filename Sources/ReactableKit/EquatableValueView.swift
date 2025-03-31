@@ -8,38 +8,38 @@
 import Foundation
 import SwiftUI
 
-struct EquatableValueView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
+public struct EquatableValueView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
     private let content: (Value) -> Content
     private let value: Value
 
-    init(value: Value, @ViewBuilder content: @escaping (Value) -> Content) {
+    public init(value: Value, @ViewBuilder content: @escaping (Value) -> Content) {
         self.content = content
         self.value = value
     }
 
-    var body: some View {
+    public var body: some View {
         content(self.value)
     }
 
-    static func == (lhs: EquatableValueView, rhs: EquatableValueView) -> Bool {
+    public static func == (lhs: EquatableValueView, rhs: EquatableValueView) -> Bool {
         lhs.value == rhs.value
     }
 }
 
-struct EquatableBindingView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
+public struct EquatableBindingView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
     private let content: (Binding<Value>) -> Content
     private let value: Binding<Value>
 
-    init(value: Binding<Value>, @ViewBuilder content: @escaping (Binding<Value>) -> Content) {
+    public init(value: Binding<Value>, @ViewBuilder content: @escaping (Binding<Value>) -> Content) {
         self.content = content
         self.value = value
     }
 
-    var body: some View {
+    public var body: some View {
         content(self.value)
     }
 
-    static func == (lhs: EquatableBindingView, rhs: EquatableBindingView) -> Bool {
+    public static func == (lhs: EquatableBindingView, rhs: EquatableBindingView) -> Bool {
         lhs.value.wrappedValue == rhs.value.wrappedValue
     }
 }
