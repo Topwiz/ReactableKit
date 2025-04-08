@@ -56,7 +56,7 @@ extension GlobalDependencyKey {
 
 // MARK: - Service Exmaple
 
-protocol ServiceProtocol {
+protocol ServiceProtocol: Sendable {
     func test() -> String
 }
 

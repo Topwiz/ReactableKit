@@ -200,19 +200,18 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
     
     static func run(
         on queue: DispatchQueue = .main,
-        _ operation: @escaping (@Sendable (Output) async -> Void) async -> Void
+        _ operation: @Sendable @escaping (@Sendable (Output) async -> Void) async -> Void
     ) -> AnyPublisher<Output, Never> {
         Deferred {
             let subject = PassthroughSubject<Output, Never>()
             let taskHolder = TaskHolder()
-            let op: (@Sendable (Output) async -> Void) async -> Void = operation
             
             return subject
                 .handleEvents(
                     receiveSubscription: { _ in
                         queue.async {
-                            taskHolder.task = Task { [op] in
-                                await op { output in
+                            taskHolder.task = Task { [operation] in
+                                await operation { output in
                                     guard !Task.isCancelled else { return }
                                     subject.send(output)
                                 }

@@ -10,7 +10,7 @@ import Foundation
 @propertyWrapper
 public struct Atomic<Value> {
     private var value: Value
-    private let lock = NSLock()
+    private let lock = NSRecursiveLock()
 
     public init(wrappedValue: Value) {
         self.value = wrappedValue
