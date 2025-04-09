@@ -22,7 +22,7 @@ public enum StorageType: Hashable {
 extension Shared: @unchecked Sendable where Value: Sendable {}
 
 @propertyWrapper
-public struct Shared<Value: Equatable>: CustomStringConvertible {
+public struct Shared<Value>: CustomStringConvertible {
     private let key: String
     private let storage: StorageType
     fileprivate let subject: CurrentValueSubject<Value, Never>
@@ -30,7 +30,6 @@ public struct Shared<Value: Equatable>: CustomStringConvertible {
     public var wrappedValue: Value {
         get { subject.value }
         set {
-            guard newValue != wrappedValue else { return }
             subject.send(newValue)
             saveToStorage(newValue)
         }
@@ -43,7 +42,7 @@ public struct Shared<Value: Equatable>: CustomStringConvertible {
     }
     
     public var publisher: AnyPublisher<Value, Never> { subject.eraseToAnyPublisher() }
-    
+  
     public init(wrappedValue defaultValue: Value, _ storage: StorageType = .memory, key: String? = nil) {
         let prefix = "reactable_shared"
         let inferredKey = key ?? "\(prefix)_\(String(reflecting: Value.self))"
