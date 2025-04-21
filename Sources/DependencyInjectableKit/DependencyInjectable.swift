@@ -45,6 +45,19 @@ public struct ViewDependency<Value>: DynamicProperty {
 @propertyWrapper
 public struct Dependency<Value> {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>
+    private var value: Value
+    
+    public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
+        self.keyPath = keyPath
+        self.value = GlobalDependencyKey()[keyPath: keyPath]
+    }
+    
+    public var wrappedValue: Value { self.value }
+}
+
+@propertyWrapper
+public struct LazyDependency<Value> {
+    private let keyPath: KeyPath<GlobalDependencyKey, Value>
     private var value: Value?
     
     public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
@@ -63,3 +76,4 @@ public struct Dependency<Value> {
         }
     }
 }
+
