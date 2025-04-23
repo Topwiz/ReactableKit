@@ -9,7 +9,7 @@ import Foundation
 import ReactableKit
 import Combine
 
-final class SharedStateChildReactable: Reactable, PathState, ObservableEvent {
+final class SharedStateChildReactable: Reactable, PathState, ObservableEvent, @unchecked Sendable {
     
     enum Action {
         case sharedStateUpdated(SharedStateReactable.SharedState)

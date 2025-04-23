@@ -22,7 +22,7 @@ public enum AppEnvironment {
     }
 }
 
-public struct GlobalDependencyKey {
+public struct GlobalDependencyKey: Sendable {
     public static var appEnvironment: AppEnvironment { .current }
     
     public subscript<T: DependencyInjectable>(_: T.Type) -> T.DependencyType {

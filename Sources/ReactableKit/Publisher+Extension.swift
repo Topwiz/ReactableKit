@@ -210,7 +210,7 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
                 .handleEvents(
                     receiveSubscription: { _ in
                         queue.async {
-                            taskHolder.task = Task { [operation] in
+                            taskHolder.task = Task {
                                 await operation { output in
                                     guard !Task.isCancelled else { return }
                                     subject.send(output)

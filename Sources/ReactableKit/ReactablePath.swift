@@ -8,10 +8,10 @@
 import Foundation
 import SwiftUI
 
-public protocol PathState: Hashable { }
+public protocol PathState: Hashable, Sendable { }
 
 @available(iOS 16.0, *)
-public struct AnyPathState: PathState, Hashable {
+public struct AnyPathState: PathState, Hashable, @unchecked Sendable {
     private let base: any PathState
     private let identifier: AnyHashable
 
@@ -133,7 +133,7 @@ public extension NavigationLink {
 // MARK: - LazyAnyPathState
 
 @available(iOS 16.0, *)
-public final class LazyAnyPathState: PathState, Hashable {
+public final class LazyAnyPathState: PathState, Hashable, @unchecked Sendable {
     private let baseClosure: () -> (any PathState)
     private var _cached: WeakWrapper?
     private let identifier: UUID = UUID()

@@ -56,7 +56,7 @@ public struct LazyViewDependency<Value>: DynamicProperty {
 }
 
 @propertyWrapper
-public struct Dependency<Value> {
+public struct Dependency<Value>: @unchecked Sendable {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>
     private var value: Value
     
@@ -69,7 +69,7 @@ public struct Dependency<Value> {
 }
 
 @propertyWrapper
-public struct LazyDependency<Value> {
+public struct LazyDependency<Value>: @unchecked Sendable {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>
     private var value: Value?
     

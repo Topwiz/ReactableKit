@@ -9,7 +9,7 @@ import Foundation
 import ReactableKit
 import Combine
 
-final class BindingReactable: Reactable, PathState {
+final class BindingReactable: Reactable, PathState, @unchecked Sendable {
     
     enum Action {
         case isOnChanged

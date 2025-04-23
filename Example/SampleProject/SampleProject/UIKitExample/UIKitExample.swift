@@ -10,7 +10,7 @@ import UIKit
 import SwiftUI
 import ReactableKit
 
-final class UIKitExampleReactable: Reactable, PathState {
+final class UIKitExampleReactable: Reactable, PathState, @unchecked Sendable {
     
     enum Action {
         case changeTitle

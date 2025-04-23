@@ -18,9 +18,9 @@ private enum WeakCache {
 }
 
 public protocol Reactable: AnyObject, IdentityHashable {
-    associatedtype Action
+    associatedtype Action: Sendable
+    associatedtype Mutation: Sendable
     associatedtype State: Sendable
-    associatedtype Mutation
     
     var initialState: State { get }
     var state: AnyPublisher<State, Never> { get }

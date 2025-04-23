@@ -10,7 +10,7 @@ import ReactableKit
 import Combine
 import DependencyInjectableKit
 
-final class CounterReactable: Reactable, PathState {
+final class CounterReactable: Reactable, PathState, @unchecked Sendable {
     
     enum Action {
         case increase

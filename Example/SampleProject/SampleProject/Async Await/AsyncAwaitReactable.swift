@@ -8,7 +8,7 @@
 import ReactableKit
 import DependencyInjectableKit
 
-final class AsyncAwaitReactable: Reactable, PathState {
+final class AsyncAwaitReactable: Reactable, PathState, @unchecked Sendable {
     
     enum Action {
         case run
