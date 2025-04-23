@@ -23,6 +23,19 @@ public extension DependencyInjectable {
 @propertyWrapper
 public struct ViewDependency<Value>: DynamicProperty {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>
+    @State private var value: Value
+    
+    public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
+        self.keyPath = keyPath
+        self.value = GlobalDependencyKey()[keyPath: keyPath]
+    }
+    
+    public var wrappedValue: Value { self.value }
+}
+
+@propertyWrapper
+public struct LazyViewDependency<Value>: DynamicProperty {
+    private let keyPath: KeyPath<GlobalDependencyKey, Value>
     @State private var value: Value?
     
     public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {

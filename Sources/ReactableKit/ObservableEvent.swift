@@ -35,7 +35,7 @@ public extension ObservableEvent {
     }
 }
 
-public struct ObservableEventResult<R: Reactable> {
+public struct ObservableEventResult<R: Reactable>: @unchecked Sendable {
     public let action: R.Action
     public var state: R.State
 }
