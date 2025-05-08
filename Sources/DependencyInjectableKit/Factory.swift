@@ -58,6 +58,10 @@ public protocol ViewFactory {
     init(payload: Payload)
 }
 
+public extension ViewFactory {
+    typealias ViewFactory = ViewDefaultFactory<Self>
+}
+
 @MainActor
 public struct ViewDefaultFactory<T: ViewFactory> {
     public init() { }

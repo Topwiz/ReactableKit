@@ -20,7 +20,11 @@ public final class ViewState<Value: Equatable>: @unchecked Sendable, CustomStrin
     private var onChange: (() -> Void)?
 
     public var wrappedValue: Value {
-        get { self._value }
+        get {
+            withExtendedLifetime(self) {
+                self._value
+            }
+        }
         set {
             if !self.ignoreEquality {
                 guard self._value != newValue else { return }
