@@ -27,7 +27,7 @@ final class ManagerSampleReactable: Reactable {
     var initialState: State = State()
     
     init() {
-        self.registerTransform()
+        self.initialize()
     }
     
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
@@ -54,23 +54,6 @@ final class ManagerSampleContainer {
     nonisolated(unsafe) static var shared: ManagerSampleContainer = ManagerSampleContainer()
     
     func updateAsyncState() {
-        Task {
-            let state = await ManagerSampleReactable.shared.action(.test)
-            print("update state 1 \(state)")
-        }
-    }
-    
-    func updateState() {
         ManagerSampleReactable.shared.action(.test)
-        
-        let action = ManagerSampleReactable.shared.actionPublish(.test)
-            .sink { state in
-                
-            }
-        
-        ManagerSampleReactable.shared.action(.test) { state in
-            
-        }
-
     }
 }

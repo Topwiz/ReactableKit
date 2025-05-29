@@ -36,7 +36,9 @@ final class TodoAddReactable: Reactable, PathState {
         switch action {
         case .titleChanged,
                 .contentChanged:
-            return .just(.updateAddButtonEnabled)
+            return .run { send in
+                await send(.updateAddButtonEnabled)
+            }
             
         case .addTodoTapped:
             return .run { send in

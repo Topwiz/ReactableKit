@@ -28,7 +28,7 @@ final class BindingReactable: Reactable, PathState, @unchecked Sendable {
     }
     
     var initialState: State
-    
+
     init(state: State = .init()) {
         self.initialState = state
     }
@@ -39,7 +39,9 @@ final class BindingReactable: Reactable, PathState, @unchecked Sendable {
             return .empty()
             
         case .emitTest:
-            return .just(.emitTest)
+            return .run { send in
+                await send(.emitTest)
+            }
         }
     }
     

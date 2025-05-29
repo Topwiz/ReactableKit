@@ -59,42 +59,26 @@ extension Reactable {
 
 extension Store {
     public func emit<T>(_ keyPath: KeyPath<R.State, Emit<T>>) -> AnyPublisher<T, Never> {
-        self.publisher
+        let startCount = self.state[keyPath: keyPath].count
+        return self.publisher
             .map { $0[keyPath: keyPath] }
             .removeDuplicates { $0.count == $1.count }
+            .drop(while: { $0.count == startCount })
             .map(\.wrappedValue)
             .eraseToAnyPublisher()
     }
 }
 
 extension View {
-    public func emit<R: Reactable, T>(
+    public func emit<R: Reactable, T: Sendable>(
         _ keyPath: KeyPath<R.State, Emit<T>>,
         from store: Store<R>,
         perform action: @escaping (T) -> Void
     ) -> some View {
-        self.modifier(EmitModifier(store: store, keyPath: keyPath, action: action))
-    }
-}
-
-struct EmitModifier<R: Reactable, T>: ViewModifier {
-    @ObservedObject var store: Store<R>
-    let keyPath: KeyPath<R.State, Emit<T>>
-    let action: (T) -> Void
-    @State private var cancellable: AnyCancellable?
-
-    func body(content: Content) -> some View {
-        content
-            .onAppear {
-                self.cancellable?.cancel()
-                self.cancellable = self.store.emit(self.keyPath)
-                    .receive(on: DispatchQueue.main)
-                    .dropFirst()
-                    .sink(receiveValue: self.action)
+        self.task {
+            for await value in store.emit(keyPath).values {
+                action(value)
             }
-            .onDisappear {
-                self.cancellable?.cancel()
-                self.cancellable = nil
-            }
+        }
     }
 }

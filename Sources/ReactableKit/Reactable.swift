@@ -11,10 +11,10 @@ import SwiftUI
 private enum WeakCache {
     nonisolated(unsafe) static let queue = WeakKeyDictionary<AnyObject, DispatchQueue>()
     nonisolated(unsafe) static let cancellables = WeakKeyDictionary<AnyObject, Set<AnyCancellable>>()
-    nonisolated(unsafe) static let state = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let stream = WeakKeyDictionary<AnyObject, Any>()
     nonisolated(unsafe) static let currentState = WeakKeyDictionary<AnyObject, Any>()
-    nonisolated(unsafe) static let isTransformRegisteredKey = WeakKeyDictionary<AnyObject, Any>()
     nonisolated(unsafe) static let isStub = WeakKeyDictionary<AnyObject, Bool>()
+    nonisolated(unsafe) static let completion = WeakKeyDictionary<AnyObject, Any>()
 }
 
 public protocol Reactable: AnyObject, IdentityHashable {
@@ -28,17 +28,21 @@ public protocol Reactable: AnyObject, IdentityHashable {
     var queue: DispatchQueue { get set }
     var cancellables: Set<AnyCancellable> { get set }
     
-    func action(_ action: Action) async -> State
+    func initialize()
+    func action(_ action: Action)
     func mutate(action: Action) -> AnyPublisher<Mutation, Never>
     func reduce(state: inout State, mutation: Mutation)
-    func registerTransform()
     func transformAction() -> AnyPublisher<Action, Never>
 }
 
 public extension Reactable {
     
+    private var stream: Stream<Action, State> {
+        WeakCache.stream.forceCastedValue(forKey: self, default: self.createStream())
+    }
+    
     var state: AnyPublisher<State, Never> {
-        WeakCache.state.forceCastedValue(forKey: self, default: self.createStream()).eraseToAnyPublisher()
+        self.stream.state.publisher()
     }
     
     var currentState: State {
@@ -62,135 +66,73 @@ public extension Reactable {
     func reduce(state: inout State, mutation: Mutation) { }
     
     func transformAction() -> AnyPublisher<Action, Never> {
-        Empty<Action, Never>().eraseToAnyPublisher()
+        .empty()
     }
     
+    func initialize() {
+        _ = self.state
+    }
+    
+    @MainActor
     internal func setState(_ state: State) {
         WeakCache.currentState.setValue(state, forKey: self)
-        let subject = WeakCache.state.forceCastedValue(forKey: self, default: self.createStream())
-        subject.send(state)
-    }
-    
-    internal func createStream() -> CurrentValueSubject<State, Never> {
-        let stateStream = CurrentValueSubject<State, Never>(self.initialState)
-        return stateStream
     }
 }
 
 public extension Reactable {
 
     func action(_ action: Action) {
-        self.dispatch(action: action, completion: { _ in })
+        self.stream.action.send(action)
     }
     
-    func action(_ action: Action, completion: @escaping (Result<State, Never>) -> Void) {
-        self.dispatch(action: action, completion: completion)
-    }
-    
-    @discardableResult
-    func action(_ action: Action) async -> State {
-        return await withUnsafeContinuation { [unowned self] continuation in
-            self.dispatch(action: action) { result in
-                switch result {
-                case .success(let state):
-                    continuation.resume(returning: state)
-                    
-                case let .failure(error):
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-    
-    func actionPublish(_ action: Action) -> AnyPublisher<State, Never> {
-        Future { [unowned self] promise in
-            self.dispatch(action: action) { result in
-                if let state = result.output {
-                    promise(.success(state))
-                }
-            }
-        }
-        .eraseToAnyPublisher()
-    }
-    
-    internal func dispatch(action: Action, completion: @escaping (Result<State, Never>) -> Void) {
-        var cancellable: AnyCancellable? = nil
-        
-        cancellable = self.mutate(action: action)
+    private func createStream() -> Stream<Action, State> {
+        let actionSubject = PassthroughSubject<Action, Never>()
+        let stateSubject = ReplaySubject<State, Never>(bufferSize: 1)
+
+        let transformedActionStream = self.transformAction()
+            .eraseToAnyPublisher()
+
+        let mergedActionStream = Publishers.Merge(
+            actionSubject.eraseToAnyPublisher(),
+            transformedActionStream
+        )
             .receive(on: self.queue)
-            .scan(self.currentState) { [weak self] currentState, mutation -> State in
-                guard let self else { return currentState }
-                var newState = self.currentState
-                self.reduce(state: &newState, mutation: mutation)
-                self.setState(newState)
-                return newState
-            }
-            .last()
-            .replaceEmpty(with: self.currentState)
-            .sink(
-                receiveCompletion: { [weak self] completionResult in
-                    guard let self, let cancellable else { return }
-                    self.cancellables.remove(cancellable)
-                },
-                receiveValue: { [weak self] finalState in
-                    guard let self else { return }
-                    completion(.success(finalState))
-                    self.sendGlobalActionIfNeeded(action, state: finalState)
-                }
-            )
-        
-        if let cancellable {
-            cancellables.insert(cancellable)
-        }
-    }
-    
-    func registerTransform() {
-        guard !self.isTransformRegistered else { return }
-        self.isTransformRegistered = true
-        
-        let transformedActions = self.transformAction()
-            .receive(on: self.queue)
-            .share()
-        
-        let mutationPublisher = transformedActions
-            .flatMap { [weak self] action -> AnyPublisher<Mutation, Never> in
+
+        let mutationStream = mergedActionStream
+            .flatMap { [weak self] action -> AnyPublisher<(Action, Mutation), Never> in
                 guard let self = self else {
-                    return Empty<Mutation, Never>().eraseToAnyPublisher()
+                    return Empty<(Action, Mutation), Never>().eraseToAnyPublisher()
                 }
                 return self.mutate(action: action)
+                    .map { (action, $0) }
                     .eraseToAnyPublisher()
             }
-        
-        let cancellable = mutationPublisher
-            .receive(on: self.queue)
-            .sink(receiveValue: { [weak self] mutation in
-                guard let self = self else { return }
-                var currentState = self.currentState
-                self.reduce(state: &currentState, mutation: mutation)
-                self.setState(currentState)
-            })
-        
-        cancellable.store(in: &cancellables)
-    }
-    
-    private var isTransformRegisteredKey: KeyWrapper {
-        get { WeakCache.isTransformRegisteredKey.forceCastedValue(forKey: self, default: KeyWrapper()) }
-        set { WeakCache.isTransformRegisteredKey.setValue(newValue, forKey: self) }
-    }
-    
-    var isTransformRegistered: Bool {
-        get {
-            objc_getAssociatedObject(self, isTransformRegisteredKey.pointer) as? Bool ?? false
-        }
-        set {
-            objc_setAssociatedObject(self, isTransformRegisteredKey.pointer, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
-    }
-}
 
-final class KeyWrapper {
-    let pointer: UnsafeRawPointer = UnsafeRawPointer(bitPattern: 0x1)!
-    init() { }
+        let stateStream = mutationStream
+            .scan((nil as Action?, self.initialState)) { [weak self] acc, tuple in
+                guard let self else { return acc }
+                let (_, prevState) = acc
+                let (action, mutation) = tuple
+                var newState = prevState
+                self.reduce(state: &newState, mutation: mutation)
+                return (action, newState)
+            }
+            .handleEvents(receiveOutput: { [weak self] (action, newState) in
+                guard let self else { return }
+                WeakCache.currentState.setValue(newState, forKey: self)
+                if let action {
+                    self.sendGlobalActionIfNeeded(action, state: newState)
+                }
+            })
+            .map { $0.1 }
+            .eraseToAnyPublisher()
+
+        stateStream
+            .sink(receiveValue: stateSubject.send)
+            .store(in: &self.cancellables)
+
+        return Stream(action: actionSubject, state: stateSubject)
+    }
 }
 
 // MARK: - Stub
@@ -200,4 +142,9 @@ public extension Reactable {
         get { WeakCache.isStub.forceCastedValue(forKey: self, default: false) }
         set { WeakCache.isStub.setValue(newValue, forKey: self) }
     }
+}
+
+struct Stream<A: Sendable, S: Sendable> {
+    var action: PassthroughSubject<A, Never>
+    var state: ReplaySubject<S, Never>
 }

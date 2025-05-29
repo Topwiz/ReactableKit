@@ -30,7 +30,9 @@ public final class ViewState<Value: Equatable>: @unchecked Sendable, CustomStrin
                 guard self._value != newValue else { return }
             }
             self._value = newValue
-            self.onChange?()
+            DispatchQueue.main.async {
+                self.onChange?()
+            }
         }
     }
     

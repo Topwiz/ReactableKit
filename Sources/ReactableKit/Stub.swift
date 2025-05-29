@@ -17,14 +17,12 @@ public final class Stub<R: Reactable> {
     }
     
     public var currentState: R.State {
-        get { self.reactable.currentState }
-        set { self.reactable.setState(newValue) }
+        self.reactable.currentState
     }
     
-    @discardableResult
-    public func action(_ action: R.Action) async -> R.State {
+    public func action(_ action: R.Action) {
         self.actions.append(action)
-        return await self.reactable.action(action)
+        self.reactable.action(action)
     }
     
 }

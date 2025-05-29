@@ -192,14 +192,13 @@ public extension Publisher {
 
 extension PassthroughSubject: @unchecked @retroactive Sendable where Output: Sendable {}
 
-final class TaskHolder: @unchecked Sendable {
+final class TaskHolder {
     var task: Task<Void, Never>?
 }
 
 public extension AnyPublisher where Output: Sendable, Failure == Never {
     
     static func run(
-        on queue: DispatchQueue = .main,
         _ operation: @Sendable @escaping (@Sendable (Output) async -> Void) async -> Void
     ) -> AnyPublisher<Output, Never> {
         Deferred {
@@ -207,16 +206,15 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
             let taskHolder = TaskHolder()
             
             return subject
+                .receive(on: DispatchQueue.main)
                 .handleEvents(
                     receiveSubscription: { _ in
-                        queue.async {
-                            taskHolder.task = Task {
-                                await operation { output in
-                                    guard !Task.isCancelled else { return }
-                                    subject.send(output)
-                                }
-                                subject.send(completion: .finished)
+                        taskHolder.task = Task {
+                            await operation { output in
+                                guard !Task.isCancelled else { return }
+                                subject.send(output)
                             }
+                            subject.send(completion: .finished)
                         }
                     },
                     receiveCancel: {

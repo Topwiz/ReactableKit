@@ -115,9 +115,10 @@ public extension Store {
         }
 
         let binding = Binding<T>(
-            get: { self.state[keyPath: keyPath][index] },
-            set: { [weak self] newValue in
-                guard let self = self else { return }
+            get: {
+                self.state[keyPath: keyPath][index]
+            },
+            set: { newValue in
                 let oldValue = self.state[keyPath: keyPath][index]
                 guard oldValue != newValue else { return }
                 self.state[keyPath: keyPath][index] = newValue
@@ -172,9 +173,10 @@ public extension Store {
         }
 
         let binding = Binding<Value>(
-            get: { self.state[keyPath: keyPath][index][keyPath: property] },
-            set: { [weak self] newValue in
-                guard let self = self else { return }
+            get: {
+                self.state[keyPath: keyPath][index][keyPath: property]
+            },
+            set: { newValue in
                 let oldValue = self.state[keyPath: keyPath][index][keyPath: property]
                 guard oldValue != newValue else { return }
                 self.state[keyPath: keyPath][index][keyPath: property] = newValue
@@ -224,9 +226,10 @@ public extension Store {
         }
         
         let binding = Binding<Value>(
-            get: { self.state[keyPath: keyPath][key] ?? existingValue },
-            set: { [weak self] newValue in
-                guard let self = self else { return }
+            get: {
+                self.state[keyPath: keyPath][key] ?? existingValue
+            },
+            set: { newValue in
                 let oldValue = self.state[keyPath: keyPath][key] ?? existingValue
                 guard oldValue != newValue else { return }
                 self.state[keyPath: keyPath][key] = newValue
