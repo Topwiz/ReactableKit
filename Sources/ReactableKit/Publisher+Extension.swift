@@ -206,7 +206,6 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
             let taskHolder = TaskHolder()
             
             return subject
-                .receive(on: DispatchQueue.main)
                 .handleEvents(
                     receiveSubscription: { _ in
                         taskHolder.task = Task {

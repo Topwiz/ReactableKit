@@ -21,6 +21,7 @@ public protocol Reactable: AnyObject, IdentityHashable {
     associatedtype Action: Sendable
     associatedtype Mutation: Sendable
     associatedtype State: Sendable
+    typealias AsyncMutation = (Mutation) async -> Void
     
     var initialState: State { get }
     var state: AnyPublisher<State, Never> { get }
