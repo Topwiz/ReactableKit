@@ -6,7 +6,6 @@
     - [2️⃣ `transformAction`을 통한 액션 변환](#2️⃣-transformaction을-통한-액션-변환)
     - [3️⃣ SwiftUI와의 Reactable 통합](#3️⃣-swiftui와의-reactable-통합)
     - [4️⃣ `updateOn`: SwiftUI 업데이트 최적화](#4️⃣-updateon-swiftui-업데이트-최적화)
-    - [5️⃣ Reactable에서 액션 디스패치](#5️⃣-reactable에서-액션-디스패치)
 - [1️⃣ 프로퍼티 래퍼](#1️⃣-프로퍼티-래퍼)
     - [🎨 `@ViewState`](#-viewstate)
     - [🔄 `@Shared`](#-shared)
@@ -25,7 +24,7 @@
 
 ### 1️⃣ Reactable의 핵심 구조
 
-`Reactable`을 사용하려면 `Reactable` 프로토콜을 준수하는 클래스를 생성하세요. `Action`, `Mutation`, `State`을 정의하고, `mutate(action:)`와 `reduce(state:mutate:)`를 구현합니다.
+`Reactable`을 사용하려면 `Reactable` 프로토콜을 준수하는 클래스를 생성하세요. `Action`, `Mutation`, `State`을 정의하고, `mutate(action:)`와 `reduce(state:mutation:)`를 구현합니다.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -94,8 +93,8 @@ final class CounterReactable: Reactable {
         }
     }
     
-    func reduce(state: inout State, mutate: Mutation) {
-        switch mutate {
+    func reduce(state: inout State, mutation: Mutation) {
+        switch mutation {
         case let .setCount(value):
             state.count = value
         }
@@ -125,7 +124,7 @@ struct CounterView: View {
     
     var body: some View {
         VStack {
-            Text("\(store.state.count)")
+            Text("\(self.store.state.count)")
                 .font(.largeTitle)
                 .padding()
             
@@ -208,29 +207,6 @@ struct CounterView: View {
 }
 ```
 
-### 5️⃣ Reactable에서 액션 디스패치
-
-Reactable은 **액션 전송 및 완료 추적**을 위한 다양한 방법을 제공합니다.
-
-```swift
-// async-await 사용 예제
-let reactable = CounterReactable()
-Task {
-    let state = try await reactable.action(.increase)
-}
-
-// Combine의 sink 사용 예제
-let action = reactable.actionPublish(.increase)
-    .sink { state in
-        print(state)
-    }
-
-// Completion Handler 사용 예제
-reactable.action(.increase) { result in
-    print(result)
-}
-```
-
 ### 1️⃣ 프로퍼티 래퍼
 
 #### 🎨 `@ViewState`
@@ -242,6 +218,8 @@ struct State {
     @ViewState var count: Int = 1
     /// ignoreEquality = true 인 경우는 같은 값이 set이 되면 SwiftUI View가 업데이트 됩니다.
     @ViewState(ignoreEquality: true) var forceUpdate: Bool = false
+    /// animation: 애니메이션을 설정한 경우는 값이 변경될 때 애니메이션을 적용합니다.
+    @ViewState(animation: .default) var forceUpdate: Bool = false
 }
 ```
 
@@ -250,7 +228,7 @@ struct State {
 `@Shared`는 **부모와 자식 컴포넌트 간의 상태 공유**를 가능하게 합니다.
 
 ```swift
-/// file, UserDefailt 저장소는 Codable를 준수 해야합니다.
+/// `file`, `UserDefailt` 저장소는 Codable를 준수 해야합니다.
 struct SharedState: Codable, Equatable {
     var username: String = ""
     var age: Int = 0
@@ -312,7 +290,7 @@ class ChildReactable: Reactable, ObservableEvent {
 // 부모 Reactable
 func transformAction() -> AnyPublisher<Action, Never> {
     let childEvent = ChildReactable.observe() // 자식 Reactable의 액션과 변경된 상태를 관찰
-        .filter { result in
+        .filter { result in // result 에는 발생한 액션과 액션이 끝난 시점의 Child State가 포함됩니다.
             if case .notifyParent = result.action { return true }
             return false
         }
@@ -326,7 +304,7 @@ func transformAction() -> AnyPublisher<Action, Never> {
 ```
 
 ### 3️⃣ `ReactableView` 프로토콜
-UIKit 뷰에서 `ReactableView` 프로토콜을 사용합니다.
+UIKit 뷰에서 @MainActor를 따르는 `ReactableView` 프로토콜을 사용합니다.
 
 ```swift
 final class UIKitView: UIView {
@@ -402,6 +380,8 @@ extension GlobalDependencyKey {
 
 ### 2. Factory
 
+@MainActor가 필요한 Factory는 `ViewFactory`를 사용합니다.
+
 ```swift
 final class TestObject: Factory {
     struct Payload {
@@ -438,7 +418,6 @@ extension GlobalDependencyKey {
 
 `AnyFactory`는 객체 생성 과정을 추상화하는 제네릭 래퍼입니다.
 Factory를 이용하여 객체를 생성한 후, 변환 클로저를 통해 원하는 출력 타입으로 변환합니다.
-
 
 ```swift
 // Define the protocol for testing
