@@ -35,6 +35,7 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
         @Shared(.file(path: "testing/")) var sharedState = SharedState()
         @Shared(.file(path: "testing/")) var bool = false
         @ViewState var drawable: Drawable = .init()
+        let childReactable = SharedStateChildReactable()
     }
     
     enum Mutation {
@@ -95,7 +96,16 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
     }
     
     func transformAction() -> AnyPublisher<Action, Never> {
-        let childEvent = SharedStateChildReactable.observe()
+//        let globalChildEvent = SharedStateChildReactable.observe()
+//            .filter { result in
+//                if case .change = result.action { return true }
+//                return false
+//            }
+//            .map(Action.childAction)
+//            .eraseToAnyPublisher()
+        
+        // local child event
+        let localChildEvent = self.currentState.childReactable.observe()
             .filter { result in
                 if case .change = result.action { return true }
                 return false
@@ -103,11 +113,12 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
             .map(Action.childAction)
             .eraseToAnyPublisher()
         
+        
         return .merge([
             self.currentState.$sharedState.publisher
                 .map(Action.sharedStateChanged)
                 .eraseToAnyPublisher(),
-            childEvent,
+            localChildEvent,
         ])
     }
 

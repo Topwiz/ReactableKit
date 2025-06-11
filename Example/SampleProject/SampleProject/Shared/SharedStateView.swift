@@ -18,7 +18,7 @@ struct SharedStateView: View {
             Text("Shared State")
                 .padding()
                 
-            SharedStateChildView(store: Store(SharedStateChildReactable()))
+            SharedStateChildView(store: Store(self.store.state.childReactable))
             
             Text("Age: \(self.drawable.age)")
             

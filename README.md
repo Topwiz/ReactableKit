@@ -305,14 +305,24 @@ class ChildReactable: Reactable, ObservableEvent {
 
 // 부모 Reactable
 func transformAction() -> AnyPublisher<Action, Never> {
-    let childEvent = ChildReactable.observe() // 자식 Reactable의 액션과 변경된 상태를 관찰
+     // 글로벌하게 모든 ChildReactable의 액션과 변경된 상태를 관찰
+    let childEvent = ChildReactable.observe()
         .filter { result in // result 에는 발생한 액션과 액션이 끝난 시점의 Child State가 포함됩니다.
             if case .notifyParent = result.action { return true }
             return false
         }
         .map(Action.parentAction)
         .eraseToAnyPublisher()
-    
+        
+    // 특정 reactable 액션을 관찰
+    let localChildEvent = self.currentState.childReactable.observe()
+        .filter { result in // result 에는 발생한 액션과 액션이 끝난 시점의 Child State가 포함됩니다.
+            if case .notifyParent = result.action { return true }
+            return false
+        }
+        .map(Action.parentAction)
+        .eraseToAnyPublisher()
+        
     return .merge([
         childEvent,
     ])

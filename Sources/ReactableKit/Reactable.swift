@@ -15,6 +15,7 @@ private enum WeakCache {
     nonisolated(unsafe) static let currentState = WeakKeyDictionary<AnyObject, Any>()
     nonisolated(unsafe) static let isStub = WeakKeyDictionary<AnyObject, Bool>()
     nonisolated(unsafe) static let completion = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let resultSubject = WeakKeyDictionary<AnyObject, Any>()
 }
 
 public protocol Reactable: AnyObject, IdentityHashable {
@@ -28,6 +29,7 @@ public protocol Reactable: AnyObject, IdentityHashable {
     var currentState: State { get }
     var queue: DispatchQueue { get set }
     var cancellables: Set<AnyCancellable> { get set }
+    var resultSubject: PassthroughSubject<ObservableEventResult<Self>, Never> { get set }
     
     func initialize()
     func action(_ action: Action)
@@ -58,6 +60,11 @@ public extension Reactable {
     var cancellables: Set<AnyCancellable> {
         get { WeakCache.cancellables.forceCastedValue(forKey: self, default: []) }
         set { WeakCache.cancellables.setValue(newValue, forKey: self) }
+    }
+    
+    var resultSubject: PassthroughSubject<ObservableEventResult<Self>, Never> {
+        get { WeakCache.resultSubject.forceCastedValue(forKey: self, default: .init()) }
+        set { WeakCache.resultSubject.setValue(newValue, forKey: self) }
     }
     
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {

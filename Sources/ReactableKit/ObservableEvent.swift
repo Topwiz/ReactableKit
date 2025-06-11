@@ -9,9 +9,12 @@ import Foundation
 import Combine
 
 public protocol ObservableEvent where Self: Reactable {
-    /// Returns a publisher that emits values whenever an event of this type is sent.
+    /// Returns a result publisher for all of the same type of `Reactable`.
     /// - Returns: An `AnyPublisher` emitting instances of the event.
     static func observe() -> AnyPublisher<ObservableEventResult<Self>, Never>
+    
+    /// Returns a result publisher for current `Reactable`.
+    func observe() -> AnyPublisher<ObservableEventResult<Self>, Never>
     
     /// Sends an event to all subscribers.
     /// - Parameter action: The event instance to send.
@@ -26,12 +29,17 @@ public extension ObservableEvent {
             .eraseToAnyPublisher()
     }
     
+    func observe() -> AnyPublisher<ObservableEventResult<Self>, Never> {
+        self.resultSubject.eraseToAnyPublisher()
+    }
+    
     func send(_ action: Action, state: State) {
         let key = String(describing: Self.self)
+        let result = ObservableEventResult<Self>(action: action, state: state)
         if let subject = Cache.observableEvent.value(forKey: key) as? PassthroughSubject<ObservableEventResult<Self>, Never> {
-            let result = ObservableEventResult<Self>(action: action, state: state)
             subject.send(result)
         }
+        self.resultSubject.send(result)
     }
 }
 
