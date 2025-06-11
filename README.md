@@ -60,8 +60,11 @@ final class CounterReactable: Reactable {
         switch action {
         case .increase:
             return .just(.setCount(self.currentState.count + 1))
+            
         case .decrease:
-            return .just(.setCount(self.currentState.count - 1))
+            return .run { send in 
+                await send(.setCount(self.currentState.count - 1))
+            }
         }
     }
     
@@ -122,7 +125,7 @@ final class CounterReactable: Reactable {
     }
 }
 ```
-> ⚠️ `Store`을 사용하지 않는다면 Reactable `init`에 수동으로 `registerTransform()`을 불러줘야 합니다.
+> ⚠️ `Store`을 사용하지 않는다면 Reactable `init`에 수동으로 `initialize()`을 불러줘야 합니다.
 
 ### 3️⃣ SwiftUI와의 Reactable 통합
 
@@ -290,6 +293,7 @@ ZStack { }
 ### 2️⃣ `ObservableEvent` (부모 자식간 통신)
 
 `ObservableEvent`는 **자식 컴포넌트와 부모 컴포넌트간 액션을 전송**할 수 있게 해줍니다.
+> ⚠️ 부모 Reactable에서 자녀의 액션을 받을려면 자녀의 Action이 reduce 까지는 진행이 되어야합니다. mutate에서 액션을 .empty()로 반환하면 자식의 액션은 부모에게 전달되지 않습니다.
 
 ```swift
 // 자식 Reactable
