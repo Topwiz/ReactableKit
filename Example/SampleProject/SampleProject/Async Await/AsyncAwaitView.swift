@@ -17,7 +17,7 @@ struct AsyncAwaitView: View {
     }
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: CGFloat(self.store.state.count * 10)) {
             Text("Value: \(self.store.state.count)")
                 
             Button {

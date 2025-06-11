@@ -20,7 +20,7 @@ final class AsyncAwaitReactable: Reactable, PathState, @unchecked Sendable {
     }
     
     struct State {
-        @ViewState var count: Int = 0
+        @ViewState(animation: .default) var count: Int = 0
     }
     
     @Dependency(\.service) var service

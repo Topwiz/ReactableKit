@@ -18,6 +18,7 @@ public final class ViewState<Value: Equatable>: @unchecked Sendable, CustomStrin
     @Atomic private var _value: Value
     private var ignoreEquality: Bool
     private var onChange: (() -> Void)?
+    private var animation: Animation? = nil
 
     public var wrappedValue: Value {
         get {
@@ -30,8 +31,13 @@ public final class ViewState<Value: Equatable>: @unchecked Sendable, CustomStrin
                 guard self._value != newValue else { return }
             }
             self._value = newValue
+            let animation = self.animation
             DispatchQueue.main.async {
-                self.onChange?()
+                if let animation {
+                    withAnimation(animation) { self.onChange?() }
+                } else {
+                    self.onChange?()
+                }
             }
         }
     }
@@ -50,10 +56,12 @@ public final class ViewState<Value: Equatable>: @unchecked Sendable, CustomStrin
     /// A property wrapper that manages a state value and notifies changes.
     /// - Parameters:
     ///   - ignoreEquality: A Boolean value that indicates whether to ignore equality checks when updating the state. Default is `false`.
+    ///   - animation: An optional animation to apply when the state changes. Default is `nil`.
     /// - Warning: Setting `ignoreEquality` to `true` may cause unnecessary updates to the SwiftUI view.
-    public init(wrappedValue: Value, ignoreEquality: Bool = false) {
+    public init(wrappedValue: Value, ignoreEquality: Bool = false, animation: Animation? = nil) {
         self._value = wrappedValue
         self.ignoreEquality = ignoreEquality
+        self.animation = animation
     }
     
     public func setOnChange(_ handler: @escaping () -> Void) {
