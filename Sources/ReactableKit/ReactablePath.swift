@@ -10,7 +10,6 @@ import SwiftUI
 
 public protocol PathState: Hashable, Sendable { }
 
-@available(iOS 16.0, *)
 public struct AnyPathState: PathState, Hashable, @unchecked Sendable {
     private let base: any PathState
     private let identifier: AnyHashable
@@ -33,8 +32,6 @@ public struct AnyPathState: PathState, Hashable, @unchecked Sendable {
     }
 }
 
-
-@available(iOS 16.0, *)
 public struct ReactablePath: Hashable {
     private var id: String = UUID().uuidString
     private var path: NavigationPath = .init()
@@ -67,7 +64,6 @@ public struct ReactablePath: Hashable {
     }
 }
 
-@available(iOS 16.0, *)
 extension NavigationStack {
     /// Initializes a `NavigationStack` with a `ReactablePath`.
     public init<Content: View, Destination: View>(
@@ -96,7 +92,6 @@ extension NavigationStack {
     }
 }
 
-@available(iOS 16.0, *)
 public struct _NavigationDestinationViewModifier<Destination: View>: ViewModifier {
     private let reactablePath: Binding<ReactablePath>
     private let destination: (any PathState) -> Destination
@@ -120,7 +115,6 @@ public struct _NavigationDestinationViewModifier<Destination: View>: ViewModifie
     }
 }
 
-@available(iOS 16.0, *)
 public extension NavigationLink {
     init<S: PathState>(
         reactable: S,
@@ -132,7 +126,6 @@ public extension NavigationLink {
 
 // MARK: - LazyAnyPathState
 
-@available(iOS 16.0, *)
 public final class LazyAnyPathState: PathState, Hashable, @unchecked Sendable {
     private let baseClosure: () -> (any PathState)
     private var _cached: WeakWrapper?
@@ -170,9 +163,6 @@ public final class LazyAnyPathState: PathState, Hashable, @unchecked Sendable {
     }
 }
 
-
-
-@available(iOS 16.0, *)
 public extension NavigationLink {
     init<S: PathState>(
         reactable: @escaping () -> S,
