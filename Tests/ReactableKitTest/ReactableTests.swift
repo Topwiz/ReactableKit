@@ -11,7 +11,7 @@ import Combine
 
 struct ReactableTests {
 
-    class MockReactable: Reactable {
+    final class MockReactable: Reactable {
         enum Action {
             case increment
             case decrement
@@ -30,14 +30,17 @@ struct ReactableTests {
         func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
             switch action {
             case .increment:
-                return .just(.setCount(self.currentState.count + 1))
+                return .run { [currentState = self.currentState] send in
+                    await send(.setCount(currentState.count + 1))
+                }
+                
             case .decrement:
                 return .just(.setCount(self.currentState.count - 1))
             }
         }
 
-        func reduce(state: inout State, mutate: Mutation) {
-            switch mutate {
+        func reduce(state: inout State, mutation: Mutation) {
+            switch mutation {
             case let .setCount(value):
                 state.count = value
             }
@@ -50,14 +53,16 @@ struct ReactableTests {
     @Test
     func testInitialState() {
         let reactable = MockReactable()
-        #expect(reactable.currentState.count == 0, "Initial state should be 0")
+        let stub = Stub(reactable)
+        #expect(stub.currentState.count == 0, "Initial state should be 0")
     }
 
     // Test to verify the increment action updates the state correctly.
     @Test
     func testIncrementAction() async {
         let reactable = MockReactable()
-        let newState = await reactable.action(.increment)
+        let stub = Stub(reactable)
+        let newState = await stub.action(.increment)
         #expect(newState.count == 1, "State count should be incremented to 1")
     }
 
@@ -65,8 +70,9 @@ struct ReactableTests {
     @Test
     func testDecrementAction() async {
         let reactable = MockReactable()
-        reactable.setState(MockReactable.State(count: 1))
-        let newState = await reactable.action(.decrement)
+        let stub = Stub(reactable)
+        await stub.setState(MockReactable.State(count: 1))
+        let newState = await stub.action(.decrement)
         #expect(newState.count == 0, "State count should be decremented to 0")
     }
 
@@ -74,14 +80,16 @@ struct ReactableTests {
     @Test
     func testPublisher() async {
         let reactable = MockReactable()
+        let stub = Stub(reactable)
         var receivedState: MockReactable.State?
 
         let cancellable = reactable.state.sink { state in
             receivedState = state
         }
 
-        reactable.setState(MockReactable.State(count: 2))
-
+        let _ = await stub.action(.increment)
+        let _ = await stub.action(.increment)
+        
         try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
         #expect(receivedState?.count == 2, "Published state count should be 2")

@@ -36,17 +36,21 @@ struct ViewStateTests {
 
     // Test onChange handler
     @Test
-    func testOnChangeHandler() {
+    func testOnChangeHandler() async{
         let viewState = ViewState(wrappedValue: 10)
         var didChange = false
         viewState.setOnChange {
             didChange = !didChange
         }
+        
         viewState.wrappedValue = 20
+        try? await Task.sleep(nanoseconds: 100_000)
         #expect(didChange)
         viewState.wrappedValue = 20
+        try? await Task.sleep(nanoseconds: 100_000)
         #expect(didChange)
         viewState.wrappedValue = 10
+        try? await Task.sleep(nanoseconds: 100_000)
         #expect(didChange == false)
     }
 
@@ -61,15 +65,17 @@ struct ViewStateTests {
 
     // Test ignore equality
     @Test
-    func testIgnoreEquality() {
+    func testIgnoreEquality() async {
         let viewState = ViewState(wrappedValue: 10, ignoreEquality: true)
         var didChange = false
         viewState.setOnChange {
             didChange = !didChange
         }
         viewState.wrappedValue = 10
+        try? await Task.sleep(nanoseconds: 100_000)
         #expect(didChange)
         viewState.wrappedValue = 10
+        try? await Task.sleep(nanoseconds: 100_000)
         #expect(didChange == false)
     }
 }
