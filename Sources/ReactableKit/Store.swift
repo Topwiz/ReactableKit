@@ -56,7 +56,7 @@ public class Store<R: Reactable>: ObservableObject, @unchecked Sendable {
 
     public func binding<Value: Equatable>(
         _ keyPath: WritableKeyPath<R.State, Value>,
-        action actionGenerator: (@Sendable (BindingValue<Value>) -> R.Action)? = nil
+        action actionGenerator: (@MainActor @Sendable (BindingValue<Value>) -> R.Action?)? = nil
     ) -> Binding<Value> {
         Binding(
             get: {
