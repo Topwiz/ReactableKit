@@ -113,6 +113,12 @@ public extension Reactable {
                 }
                 return self.mutate(action: action)
                     .map { (action, $0) }
+                    .handleEvents(receiveCompletion: { [weak self] completion in
+                        guard let self else { return }
+                        if case .finished = completion {
+                            self.sendGlobalActionIfNeeded(action, state: self.currentState)
+                        }
+                    })
                     .eraseToAnyPublisher()
             }
 
@@ -128,9 +134,6 @@ public extension Reactable {
             .handleEvents(receiveOutput: { [weak self] (action, newState) in
                 guard let self else { return }
                 WeakCache.currentState.setValue(newState, forKey: self)
-                if let action {
-                    self.sendGlobalActionIfNeeded(action, state: newState)
-                }
             })
             .map { $0.1 }
             .eraseToAnyPublisher()

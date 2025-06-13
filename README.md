@@ -294,6 +294,7 @@ ZStack { }
 
 `ObservableEvent`는 **자식 컴포넌트와 부모 컴포넌트간 액션을 전송**할 수 있게 해줍니다.
 > ⚠️ 부모 Reactable에서 자녀의 액션을 받을려면 자녀의 Action이 reduce 까지는 진행이 되어야합니다. mutate에서 액션을 .empty()로 반환하면 자식의 액션은 부모에게 전달되지 않습니다.
+> ⚠️ Action이 끝난시점에 자녀의 State를 부모에게 전달하지만, 타이밍 이슈로 최신 state가 아닐수 있습니다. 어떤 자녀 Reactable이 보냈는지 판단하는 용도로 사용해주세요.
 
 ```swift
 // 자식 Reactable
