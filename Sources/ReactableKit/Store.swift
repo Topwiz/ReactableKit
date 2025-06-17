@@ -43,7 +43,9 @@ public class Store<R: Reactable>: ObservableObject, @unchecked Sendable {
             if let publishedWrapper = child.value as? PublishedWrapper {
                 DispatchQueue.main.async { [weak self] in
                     publishedWrapper.setOnChange { [weak self] in
-                        self?.objectWillChange.send()
+                        DispatchQueue.main.async { [weak self] in
+                            self?.objectWillChange.send()
+                        }
                     }
                 }
             }
