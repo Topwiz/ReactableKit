@@ -90,7 +90,9 @@ public extension Reactable {
 public extension Reactable {
 
     func action(_ action: Action) {
-        self.stream.action.send(action)
+        self.queue.async { [weak self] in
+            self?.stream.action.send(action)
+        }
     }
     
     private func createStream() -> Stream<Action, State> {
@@ -112,6 +114,7 @@ public extension Reactable {
                     return Empty<(Action, Mutation), Never>().eraseToAnyPublisher()
                 }
                 return self.mutate(action: action)
+                    .receive(on: self.queue)
                     .map { (action, $0) }
                     .handleEvents(receiveCompletion: { [weak self] completion in
                         guard let self else { return }
