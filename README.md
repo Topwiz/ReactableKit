@@ -32,6 +32,24 @@
     - [2. Factory](#2-factory)
     - [3. AnyFactory](#3-anyfactory)
 
+## 📦 Installation
+
+### Swift Package Manager (SPM)
+
+`ReactableKit`은 Swift Package Manager를 통해 쉽게 설치할 수 있습니다. Xcode에서 프로젝트를 열고, 메뉴에서 `File` > `Add Packages...`를 선택한 후, 아래 URL을 입력하세요:
+
+```
+https://github.com/topwiz/ReactableKit.git
+```
+
+또는 `Package.swift` 파일에 아래와 같이 직접 추가할 수도 있습니다:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/topwiz/ReactableKit.git", from: `version`)
+]
+```
+
 ## ⚡ 기본 사용법
 
 ### 1️⃣ Reactable의 핵심 구조
