@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftUICore
+import SwiftUI
 
 public protocol DependencyInjectable {
     associatedtype DependencyType
