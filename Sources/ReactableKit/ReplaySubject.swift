@@ -9,7 +9,7 @@
 import Foundation
 import Combine
 
-final class ReplaySubject<Output, Failure: Error>: Publisher {
+final class ReplaySubject<Output, Failure: Error>: Publisher, @unchecked Sendable {
     typealias Output = Output
     typealias Failure = Failure
 

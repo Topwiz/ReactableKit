@@ -10,7 +10,7 @@ import Combine
 import SwiftUI
 
 @MainActor
-public class Store<R: Reactable>: ObservableObject, @unchecked Sendable {
+public class Store<R: Reactable>: ObservableObject {
     public let reactable: R
     
     public var state: R.State {

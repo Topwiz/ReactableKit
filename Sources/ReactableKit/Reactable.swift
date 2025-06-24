@@ -88,10 +88,11 @@ public extension Reactable {
 }
 
 public extension Reactable {
-
+    
     func action(_ action: Action) {
-        self.queue.async { [weak self] in
-            self?.stream.action.send(action)
+        let stream = self.stream
+        self.queue.async {
+            stream.action.send(action)
         }
     }
     
@@ -158,7 +159,7 @@ public extension Reactable {
     }
 }
 
-struct Stream<A: Sendable, S: Sendable> {
+struct Stream<A: Sendable, S: Sendable>: Sendable {
     var action: PassthroughSubject<A, Never>
     var state: ReplaySubject<S, Never>
 }
