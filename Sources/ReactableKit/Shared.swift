@@ -105,8 +105,9 @@ public struct Shared<Value>: CustomStringConvertible {
             } catch {
                 print("❌ Failed to remove file: \(error.localizedDescription)")
             }
-
-        default: break
+            
+        case .memory:
+            MemoryStorage.shared.remove(forKey: self.key)
         }
     }
 
