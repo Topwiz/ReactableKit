@@ -330,7 +330,8 @@ extension UIKitView: ReactableView {
 
 ### 1. DependencyInjectable
 
-`DependencyInjectable` 프로토콜은 타입이 서로 다른 환경에 대한 의존성을 정의할 수 있도록 합니다.
+- `DependencyInjectable` 프로토콜은 타입이 서로 다른 환경에 대한 의존성을 정의할 수 있도록 합니다.
+- `MainActorDependencyInjectable` 프로토콜은 @MainActor를 따르는 디펜던시에 사용합니다.
 
 ```swift
 public protocol DependencyInjectable {
@@ -376,6 +377,21 @@ extension GlobalDependencyKey {
 
 // usage
 @Dependency(\.service) var service
+
+
+// MainActor Example
+
+extension Service: MainActorDependencyInjectable {
+    public static let real: Service = .shared
+}
+
+extension GlobalDependencyKey {
+    @MainActor
+    public var service: ServiceProtocol {
+        self[Service.self]
+    }
+}
+
 ```
 
 ### 2. Factory

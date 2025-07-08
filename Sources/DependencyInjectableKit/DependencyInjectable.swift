@@ -20,6 +20,7 @@ public extension DependencyInjectable {
     static var test: DependencyType { self.real }
 }
 
+@MainActor
 @propertyWrapper
 public struct ViewDependency<Value>: DynamicProperty {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>
@@ -33,6 +34,7 @@ public struct ViewDependency<Value>: DynamicProperty {
     public var wrappedValue: Value { self.value }
 }
 
+@MainActor
 @propertyWrapper
 public struct LazyViewDependency<Value>: DynamicProperty {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>

@@ -36,5 +36,17 @@ public struct GlobalDependencyKey: Sendable {
         }
     }
     
+    @MainActor
+    public subscript<T: MainActorDependencyInjectable>(_: T.Type) -> T.DependencyType {
+        switch GlobalDependencyKey.appEnvironment {
+        case .real:
+            return T.real
+        case .preview:
+            return T.preview
+        case .test:
+            return T.test
+        }
+    }
+    
     public init() {}
 }
