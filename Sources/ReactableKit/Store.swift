@@ -55,6 +55,11 @@ public class Store<R: Reactable>: ObservableObject {
     public func action(_ action: R.Action) {
         self.reactable.action(action)
     }
+    
+    @discardableResult
+    public func action(_ action: R.Action) async -> R.State {
+        await self.reactable.mainActorAction(action)
+    }
 
     public func binding<Value: Equatable>(
         _ keyPath: WritableKeyPath<R.State, Value>,

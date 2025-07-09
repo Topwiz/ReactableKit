@@ -16,6 +16,7 @@ private enum WeakCache {
     nonisolated(unsafe) static let isStub = WeakKeyDictionary<AnyObject, Bool>()
     nonisolated(unsafe) static let completion = WeakKeyDictionary<AnyObject, Any>()
     nonisolated(unsafe) static let resultSubject = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let asyncAction = WeakKeyDictionary<AnyObject, Any>()
 }
 
 public protocol Reactable: AnyObject, IdentityHashable {
@@ -85,14 +86,46 @@ public extension Reactable {
     internal func setState(_ state: State) {
         WeakCache.currentState.setValue(state, forKey: self)
     }
+    
+    internal var asyncAction: PassthroughSubject<IdentityAction, Never> {
+        get { WeakCache.asyncAction.forceCastedValue(forKey: self, default: .init()) }
+        set { WeakCache.asyncAction.setValue(newValue, forKey: self) }
+    }
 }
 
 public extension Reactable {
+    
+    internal typealias IdentityAction = Identity<Self, Self.Action>
     
     func action(_ action: Action) {
         let stream = self.stream
         self.queue.async {
             stream.action.send(action)
+        }
+    }
+    
+    internal func asyncAction(_ action: IdentityAction) {
+        self.queue.async { [weak self] in
+            self?.asyncAction.send(action)
+        }
+    }
+    
+    @MainActor
+    @discardableResult
+    internal func mainActorAction(_ action: Action) async -> State {
+        return await withCheckedContinuation { [weak self] continuation in
+            guard let self else { return }
+            let identity = IdentityAction(action: action, continuation: continuation)
+            self.asyncAction(identity)
+        }
+    }
+    
+    @discardableResult
+    func action(_ action: Action) async -> State {
+        return await withCheckedContinuation { [weak self] continuation in
+            guard let self else { return }
+            let identity = IdentityAction(action: action, continuation: continuation)
+            self.asyncAction(identity)
         }
     }
     
@@ -103,31 +136,32 @@ public extension Reactable {
         let transformedActionStream = self.transformAction()
             .eraseToAnyPublisher()
 
-        let mergedActionStream = Publishers.Merge(
-            actionSubject.eraseToAnyPublisher(),
-            transformedActionStream
+        let mergedActionStream = Publishers.Merge3(
+            actionSubject.map { Identity(action: $0) }.eraseToAnyPublisher(),
+            transformedActionStream.map { Identity(action: $0) }.eraseToAnyPublisher(),
+            self.asyncAction.eraseToAnyPublisher()
         )
             .receive(on: self.queue)
 
         let mutationStream = mergedActionStream
-            .flatMap { [weak self] action -> AnyPublisher<(Action, Mutation), Never> in
-                guard let self = self else {
-                    return Empty<(Action, Mutation), Never>().eraseToAnyPublisher()
-                }
-                return self.mutate(action: action)
-                    .receive(on: self.queue)
-                    .map { (action, $0) }
+            .flatMap { [weak self] identity -> AnyPublisher<(IdentityAction, Mutation), Never> in
+                guard let self = self else { return .empty() }
+                return self.mutate(action: identity.action)
+                    .map { (identity, $0) }
                     .handleEvents(receiveCompletion: { [weak self] completion in
                         guard let self else { return }
                         if case .finished = completion {
-                            self.sendGlobalActionIfNeeded(action, state: self.currentState)
+                            self.sendGlobalActionIfNeeded(identity.action, state: self.currentState)
+                            if let completion = identity.continuation {
+                                completion.resume(returning: self.currentState)
+                            }
                         }
                     })
                     .eraseToAnyPublisher()
             }
 
         let stateStream = mutationStream
-            .scan((nil as Action?, self.initialState)) { [weak self] acc, tuple in
+            .scan((nil as IdentityAction?, self.initialState)) { [weak self] acc, tuple in
                 guard let self else { return acc }
                 let (_, prevState) = acc
                 let (action, mutation) = tuple
@@ -162,4 +196,9 @@ public extension Reactable {
 struct Stream<A: Sendable, S: Sendable>: Sendable {
     var action: PassthroughSubject<A, Never>
     var state: ReplaySubject<S, Never>
+}
+
+struct Identity<R: Reactable, A: Sendable>: Sendable {
+    var action: A
+    var continuation: CheckedContinuation<R.State, Never>?
 }

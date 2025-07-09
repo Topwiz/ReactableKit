@@ -18,6 +18,7 @@
     - [2️⃣ `transformAction`을 통한 액션 변환](#2️⃣-transformaction을-통한-액션-변환)
     - [3️⃣ SwiftUI와의 Reactable 통합](#3️⃣-swiftui와의-reactable-통합)
     - [4️⃣ `updateOn`: SwiftUI 업데이트 최적화](#4️⃣-updateon-swiftui-업데이트-최적화)
+    - [5️⃣ 액션 디스패치: 동기 vs 비동기](#5️⃣-액션-디스패치-동기-vs-비동기)
 - [1️⃣ 프로퍼티 래퍼](#1️⃣-프로퍼티-래퍼)
     - [🎨 `@ViewState`](#-viewstate)
     - [🔄 `@Shared`](#-shared)
@@ -236,6 +237,45 @@ struct CounterView: View {
                 }
             }
         }
+    }
+}
+```
+
+### 5️⃣ 액션 디스패치: 동기 vs 비동기
+
+ReactableKit은 두 가지 액션 디스패치 방식을 제공합니다: **동기적 액션(Fire-and-Forget)**과 **비동기적 액션(Async/Await)**입니다.
+
+#### 🔥 동기적 액션 (Fire-and-Forget)
+
+일반적인 액션 디스패치 방식으로, 액션을 보내고 결과를 기다리지 않습니다.
+
+```swift
+// 기본 동기 액션
+store.action(.increase)
+store.action(.decrease)
+
+// 반복적인 액션 실행
+for _ in 0..<10 {
+    store.action(.increase)
+}
+```
+#### ⏳ 비동기적 액션 (Async/Await)
+
+액션이 완전히 처리되고 상태가 업데이트된 후의 최종 상태를 반환받을 수 있습니다.
+
+```swift
+// 비동기 액션으로 최종 상태 받기
+
+let finalState = await store.action(.increase)
+print("액션 완료 후 카운트: \(finalState.count)")
+
+// SwiftUI에서 비동기 액션 사용
+
+Button("Async Increase") {
+    Task {
+        let result = await store.action(.increase)
+        // 액션 완료 후 추가 작업 수행
+        print("증가 완료, 현재 값: \(result.count)")
     }
 }
 ```
