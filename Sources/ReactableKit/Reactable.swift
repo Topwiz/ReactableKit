@@ -105,8 +105,9 @@ public extension Reactable {
     }
     
     internal func asyncAction(_ action: IdentityAction) {
-        self.queue.async { [weak self] in
-            self?.asyncAction.send(action)
+        let asyncAction = self.asyncAction
+        self.queue.async {
+            asyncAction.send(action)
         }
     }
     
@@ -121,7 +122,7 @@ public extension Reactable {
     }
     
     @discardableResult
-    func action(_ action: Action) async -> State {
+    func asyncAction(_ action: Action) async -> State {
         return await withCheckedContinuation { [weak self] continuation in
             guard let self else { return }
             let identity = IdentityAction(action: action, continuation: continuation)

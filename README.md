@@ -266,14 +266,14 @@ for _ in 0..<10 {
 ```swift
 // 비동기 액션으로 최종 상태 받기
 
-let finalState = await store.action(.increase)
+let finalState = await store.asyncAction(.increase)
 print("액션 완료 후 카운트: \(finalState.count)")
 
 // SwiftUI에서 비동기 액션 사용
 
 Button("Async Increase") {
     Task {
-        let result = await store.action(.increase)
+        let result = await store.asyncAction(.increase)
         // 액션 완료 후 추가 작업 수행
         print("증가 완료, 현재 값: \(result.count)")
     }
