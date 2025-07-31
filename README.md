@@ -1,9 +1,12 @@
 # 🚀 ReactableKit
 
+**[🇰🇷 한국어 ReadMe](README/README_ko.md)**
+
 ## 📌 Introduction
 
-**ReactableKit**은 **Combine** 기반으로 만들어진, **SwiftUI** 애플리케이션을 위한 가볍지만 강력한 상태 관리 프레임워크입니다.
-이 프레임워크는 ReactorKit 아키텍처를 바탕으로 하여, 비즈니스 로직과 상태 변환을 효율적으로 처리할 수 있는 구조적인 방식을 제공합니다.
+**ReactableKit** is a lightweight yet powerful state management framework for **SwiftUI** applications built on **Combine**.
+
+Inspired by ReactorKit architecture, this framework provides a structured approach to efficiently handle business logic and state transformations.
 
 ## 📋 Requirements
 
@@ -14,13 +17,13 @@
 
 ### Swift Package Manager (SPM)
 
-`ReactableKit`은 Swift Package Manager를 통해 쉽게 설치할 수 있습니다. Xcode에서 프로젝트를 열고, 메뉴에서 `File` > `Add Packages...`를 선택한 후, 아래 URL을 입력하세요:
+You can easily install `ReactableKit` using Swift Package Manager. Open your project in Xcode, select `File` > `Add Packages...` from the menu, and enter the following URL:
 
 ```
 https://github.com/topwiz/ReactableKit.git
 ```
 
-또는 `Package.swift` 파일에 아래와 같이 직접 추가할 수도 있습니다:
+Or add it directly to your `Package.swift` file:
 
 ```swift
 dependencies: [
@@ -30,32 +33,32 @@ dependencies: [
 
 ---
 
-## 📚 목차
+## 📚 Table of Contents
 
-### ⚡ 기본 사용법
-- [1️⃣ Reactable의 핵심 구조](#1️⃣-reactable의-핵심-구조)
-- [2️⃣ `transformAction`을 통한 액션 변환](#2️⃣-transformaction을-통한-액션-변환)
-- [3️⃣ SwiftUI와 Reactable](#3️⃣-swiftui와-reactable)
-- [4️⃣ `updateOn`: SwiftUI 업데이트 최적화](#4️⃣-updateon-swiftui-업데이트-최적화)
-- [5️⃣ 액션 디스패치: 동기 vs 비동기](#5️⃣-액션-디스패치-동기-vs-비동기)
+### ⚡ Basic Usage
+- [1️⃣ Core Structure of Reactable](#1️⃣-core-structure-of-reactable)
+- [2️⃣ Action Transformation with `transformAction`](#2️⃣-action-transformation-with-transformaction)
+- [3️⃣ SwiftUI and Reactable](#3️⃣-swiftui-and-reactable)
+- [4️⃣ `updateOn`: SwiftUI Update Optimization](#4️⃣-updateon-swiftui-update-optimization)
+- [5️⃣ Action Dispatch](#5️⃣-action-dispatch)
 
-### 🎨 프로퍼티 래퍼
-- [`@ViewState`](#-viewstate)
-- [`@Shared`](#-shared)
-- [`@Emit` 상태 추적](#-상태-추적을-위한-emit-사용)
+### 🎨 Property Wrappers
+- [`@ViewState`](#viewstate)
+- [`@Shared`](#shared)
+- [`@Emit` State Tracking](#emit-state-tracking)
 
-### 🔧 기능
-- [`ObservableEvent` (부모 자식간 통신)](#observableevent-부모-자식간-통신)
-- [`ReactableView` 프로토콜](#reactableview-프로토콜)
-- [`DependencyInjectable` & `Factory` 패턴](#dependencyinjectable--factory-패턴-사용법)
+### 🔧 Features
+- [`ObservableEvent` (Parent-Child Communication)](#observableevent-parent-child-communication)
+- [`ReactableView` Protocol](#reactableview-protocol)
+- [`DependencyInjectable` & `Factory` Pattern](#dependencyinjectable--factory-pattern)
 
 ---
 
-## ⚡ 기본 사용법
+## ⚡ Basic Usage
 
-### 1️⃣ Reactable의 핵심 구조
+### 1️⃣ Core Structure of Reactable
 
-`Reactable`을 사용하려면 `Reactable` 프로토콜을 준수하는 클래스를 생성하세요. `Action`, `Mutation`, `State`을 정의하고, `mutate(action:)`와 `reduce(state:mutation:)`를 구현합니다.
+To use `Reactable`, create a class that conforms to the `Reactable` protocol. Define `Action`, `Mutation`, and `State`, then implement `mutate(action:)` and `reduce(state:mutation:)`.
 
 ```swift
 final class CounterReactable: Reactable {
@@ -95,9 +98,9 @@ final class CounterReactable: Reactable {
 }
 ```
 
-### 2️⃣ `transformAction`을 통한 액션 변환
+### 2️⃣ Action Transformation with `transformAction`
 
-`transformAction`은 자동으로 **이벤트 기반 액션 트리거**를 활성화합니다. 이는 타이머, 각종 액션을 Reactable Action으로 변환하는데 유용합니다.
+`transformAction` automatically enables **event-based action triggers**. This is useful for converting timers and various events into Reactable Actions.
 
 ```swift
 func transformAction() -> AnyPublisher<Action, Never> {
@@ -108,11 +111,11 @@ func transformAction() -> AnyPublisher<Action, Never> {
 }
 ```
 
-> ⚠️ **주의**: `Store` 안 쓰고 직접 만들 때는 `init`에서 `initialize()`를 꼭 호출해 주세요.
+> ⚠️ **Important**: When not using `Store` and creating directly, make sure to call `initialize()` in the `init` method.
 
-### 3️⃣ SwiftUI와 Reactable
+### 3️⃣ SwiftUI and Reactable
 
-`Store`를 사용하여 SwiftUI View에서 상태 변화를 감지하고 `Action`을 dispatch할 수 있습니다.
+Use `Store` to detect state changes and dispatch `Action` in SwiftUI Views.
 
 ```swift
 struct CounterView: View {
@@ -133,9 +136,9 @@ struct CounterView: View {
 }
 ```
 
-### 4️⃣ `updateOn`: SwiftUI 업데이트 최적화
+### 4️⃣ `updateOn`: SwiftUI Update Optimization
 
-특정 상태만 감시해서 SwiftUI 업데이트를 줄일 수 있어요:
+You can reduce SwiftUI updates by monitoring only specific states:
 
 ```swift
 struct OptimizedView: View {
@@ -143,13 +146,13 @@ struct OptimizedView: View {
 
     var body: some View {
         VStack {
-            // ✅ `count`만 바뀔 때 업데이트
+            // ✅ Updates only when `count` changes
             self.store.updateOn(\.count) { value in
                 Text("\(value)")
                     .font(.headline)
             }
             
-            // ✅ 액션이랑 같이 쓰기
+            // ✅ Using with action
             self.store.updateOn(\.isOn) { value in
                 Toggle(isOn: value) {
                     Text("Toggle")
@@ -158,16 +161,14 @@ struct OptimizedView: View {
                 .toggleChanged
             }
             
-            // ✅ ForEach 예시
-            
+            // ✅ ForEach example
             ForEach(self.store.state.items) { item in
                 self.store.updateOn(\.items, for: item.id) { value in
                     Text("\(value.name)")
                 }
             }
             
-            // ✅ ForEach List 다중 뷰 예제
-            
+            // ✅ ForEach List multiple views example
             ForEach(self.store.state.list) { item in
                 HStack {
                     self.store.updateOn(\.list, for: item.id, property: \.index) { value in
@@ -187,45 +188,45 @@ struct OptimizedView: View {
 }
 ```
 
-### 5️⃣ 액션 dispatch: 동기 & 비동기
+### 5️⃣ Action Dispatch
 
-#### 그냥 보내기 (동기)
+#### Normal Action
 ```swift
 store.action(.increase)
 ```
 
-#### 보내고 기다리기 (비동기)
+#### Concurrency Action
 
-- 액션이 완전히 처리되고 상태가 업데이트된 후의 최종 상태를 반환받을 수 있습니다.
+You can receive the final state after the action is completely processed and the state is updated.
 
 ```swift
 let finalState = await store.asyncAction(.increase)
-print("최종 카운트: \(finalState.count)")
+print("Final count: \(finalState.count)")
 ```
 
 ---
 
-## 🎨 프로퍼티 래퍼
+## 🎨 Property Wrappers
 
 ### `@ViewState`
-`@ViewState`는 값이 변경될 때 **자동 UI 업데이트**를 보장합니다. `@ViewState`가 없는 프로퍼티는 SwiftUI 업데이트를 트리거하지 않습니다.
+`@ViewState` ensures **automatic UI updates** when values change. Properties without `@ViewState` do not trigger SwiftUI updates.
 
 ```swift
 struct State {
     @ViewState var count: Int = 1
-    /// ignoreEquality = true 인 경우는 같은 값이 set이 되면 SwiftUI View가 업데이트 됩니다.
+    /// When ignoreEquality = true, SwiftUI View updates even when the same value is set
     @ViewState(ignoreEquality: true) var forceUpdate: Bool = false
-    /// animation: 애니메이션을 설정한 경우는 값이 변경될 때 애니메이션을 적용합니다.
-    @ViewState(animation: .default) var forceUpdate: Bool = false
+    /// animation: When animation is set, animation is applied when the value changes
+    @ViewState(animation: .default) var animatedValue: Double = 0.0
 }
 ```
 
 ### `@Shared`
 
-`@Shared`는 **부모와 자식 컴포넌트 간의 상태 공유**를 가능하게 합니다.
+`@Shared` enables **state sharing between parent and child components**.
 
 ```swift
-/// `file`, `UserDefailt` 저장소는 Codable를 준수 해야합니다.
+/// `file` and `UserDefaults` storage must conform to Codable
 struct SharedState: Codable, Equatable {
     var username: String = ""
     var age: Int = 0
@@ -234,18 +235,18 @@ struct SharedState: Codable, Equatable {
 
 struct State {
     @Shared(.file()) var sharedState = SharedState()
-    @Shared(.file(path: "Test/")) var sharedState = SharedState() // 서브 폴더 경로
+    @Shared(.file(path: "Test/")) var sharedState = SharedState() // Subfolder path
     @Shared var sharedState = SharedState()
-    @Shared(key: "custom_key") var sharedState = SharedState() // 커스텀 키
+    @Shared(key: "custom_key") var sharedState = SharedState() // Custom key
     @ViewState var displayInfo: String = ""
 }
 ```
 
-> ⚠️ `@Shared`는 값이 변경되어도 UI를 자동으로 업데이트하지 않습니다.
+> ⚠️ `@Shared` does not automatically update the UI when values change.
 
-### `@Emit` 상태 추적
+### `@Emit` State Tracking
 
-`@Emit`은 값이 동일하게 설정되더라도 업데이트를 트리거합니다.
+`@Emit` triggers updates even when the same value is set.
 
 ```swift
 struct State {
@@ -253,17 +254,17 @@ struct State {
 }
 ```
 
-#### `emit(_:)` 구독하기
+#### Subscribing to `emit(_:)`
 
 ```swift
 reactable.emit(\.$title)
     .sink { newValue in
-        print("제목이 바뀜:", newValue)
+        print("Title changed:", newValue)
     }
     .store(in: &cancellables)
 ```
 
-#### SwiftUI에서 `@Emit` 사용하기
+#### Using `@Emit` in SwiftUI
 
 ```swift
 ZStack { }
@@ -274,34 +275,34 @@ ZStack { }
 
 ---
 
-## 🔧 기능
+## 🔧 Features
 
-### `ObservableEvent` (부모 자식간 통신)
+### `ObservableEvent` (Parent-Child Communication)
 
-`ObservableEvent`는 **자식 컴포넌트와 부모 컴포넌트간 액션을 전송**할 수 있게 해줍니다.
+`ObservableEvent` enables **action transmission between child and parent components**.
 
 ```swift
-// 자식 Reactable
+// Child Reactable
 class ChildReactable: Reactable, ObservableEvent {
     enum Action {
         case notifyParent(Int)
     }
 }
 
-// 부모 Reactable
+// Parent Reactable
 func transformAction() -> AnyPublisher<Action, Never> {
-     // 글로벌하게 모든 ChildReactable의 액션과 변경된 상태를 관찰
+     // Globally observe all ChildReactable actions and changed states
     let childEvent = ChildReactable.observe()
-        .filter { result in // result 에는 발생한 액션과 액션이 끝난 시점의 Child State가 포함됩니다.
+        .filter { result in // result contains the action that occurred and the Child State at the end of the action
             if case .notifyParent = result.action { return true }
             return false
         }
         .map(Action.parentAction)
         .eraseToAnyPublisher()
         
-    // 특정 reactable 액션을 관찰
+    // Observe specific reactable actions
     let localChildEvent = self.currentState.childReactable.observe()
-        .filter { result in // result 에는 발생한 액션과 액션이 끝난 시점의 Child State가 포함됩니다.
+        .filter { result in // result contains the action that occurred and the Child State at the end of the action
             if case .notifyParent = result.action { return true }
             return false
         }
@@ -314,9 +315,9 @@ func transformAction() -> AnyPublisher<Action, Never> {
 }  
 ```
 
-### `ReactableView` 프로토콜
+### `ReactableView` Protocol
 
-UIKit 뷰에서 @MainActor를 따르는 `ReactableView` 프로토콜을 사용합니다.
+Use the `ReactableView` protocol that follows @MainActor in UIKit views.
 
 ```swift
 final class UIKitView: UIView {
@@ -329,16 +330,16 @@ final class UIKitView: UIView {
 }
 
 extension UIKitView: ReactableView { 
-    // self.reactable이 세팅되면 호출됩니다.
+    // Called when self.reactable is set
     func bind(reactable: UIKitReactable) { 
 
     }
 }
 ```
 
-### `DependencyInjectable` & `Factory` 패턴 사용법
+### `DependencyInjectable` & `Factory` Pattern
 
-의존성 주입 시스템과 팩토리 패턴을 결합하여, real, preview, test 환경에서 객체 생성 및 의존성 관리를 간소화합니다.
+Combines dependency injection system with factory pattern to simplify object creation and dependency management in real, preview, and test environments.
 
 #### 1. DependencyInjectable
 
@@ -361,7 +362,7 @@ struct Service: ServiceProtocol {
     }
 }
 
-// MainActor를 따라야한다면 `MainActorDependencyInjectable`를 사용하세요.
+// Use `MainActorDependencyInjectable` if you need to follow MainActor
 
 extension Service: DependencyInjectable {
     static var real: ServiceProtocol { Service() }
@@ -381,7 +382,7 @@ extension GlobalDependencyKey {
 
 #### 2. Factory
 
-> @MainActor가 필요한 Factory는 `ViewFactory`를 사용합니다.
+> Use `ViewFactory` for factories that require @MainActor.
 
 ```swift
 final class TestObject: Factory {
@@ -417,8 +418,8 @@ extension GlobalDependencyKey {
 
 #### 3. AnyFactory
 
-`AnyFactory`는 객체 생성 과정을 추상화하는 제네릭 래퍼입니다.
-Factory를 이용하여 객체를 생성한 후, 변환 클로저를 통해 원하는 출력 타입으로 변환합니다.
+`AnyFactory` is a generic wrapper that abstracts the object creation process.
+It creates objects using Factory and transforms them into the desired output type through transformation closures.
 
 ```swift
 extension MyFactory: DependencyInjectable {
