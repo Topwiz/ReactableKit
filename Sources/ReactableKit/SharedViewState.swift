@@ -1,21 +1,17 @@
 //
-//  ViewState.swift
+//  SharedViewState.swift
 //  ReactableKit
 //
-//  Created by Jeehoon Son on 1/24/25.
+//  Created by Jeehoon Son on 8/29/25.
 //
 
 import Foundation
 import Combine
 import SwiftUI
 
-protocol PublishedWrapper {
-    func setOnChange(_ handler: @escaping () -> Void)
-}
-
 @propertyWrapper
-public final class ViewState<Value: Equatable & Sendable>: @unchecked Sendable, CustomStringConvertible, PublishedWrapper {
-    @Atomic private var _value: Value
+public final class SharedViewState<Value: Equatable & Sendable>: @unchecked Sendable, CustomStringConvertible, PublishedWrapper {
+    @Shared var _value: Value
     private var ignoreEquality: Bool
     private var onChange: (() -> Void)?
     private var animation: Animation? = nil
@@ -58,18 +54,26 @@ public final class ViewState<Value: Equatable & Sendable>: @unchecked Sendable, 
     ///   - ignoreEquality: A Boolean value that indicates whether to ignore equality checks when updating the state. Default is `false`.
     ///   - animation: An optional animation to apply when the state changes. Default is `nil`.
     /// - Warning: Setting `ignoreEquality` to `true` may cause unnecessary updates to the SwiftUI view.
-    public init(wrappedValue: Value, ignoreEquality: Bool = false, animation: Animation? = nil) {
-        self._value = wrappedValue
+    public init(
+        wrappedValue: Value,
+        _ storage: StorageType = .memory,
+        key: String? = nil,
+        ignoreEquality: Bool = false,
+        animation: Animation? = nil
+    ) {
         self.ignoreEquality = ignoreEquality
         self.animation = animation
+        @Shared(storage, key: key) var value: Value = wrappedValue
+        self._value = value
     }
     
     public func setOnChange(_ handler: @escaping () -> Void) {
         self.onChange = handler
     }
     
-    public static func == (lhs: ViewState<Value>, rhs: ViewState<Value>) -> Bool {
+    public static func == (lhs: SharedViewState<Value>, rhs: SharedViewState<Value>) -> Bool {
         lhs._value == rhs._value
     }
     
 }
+

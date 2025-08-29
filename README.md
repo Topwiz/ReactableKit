@@ -23,6 +23,7 @@ You can easily install `ReactableKit` using Swift Package Manager. Open your pro
 https://github.com/topwiz/ReactableKit.git
 ```
 
+
 Or add it directly to your `Package.swift` file:
 
 ```swift
@@ -45,6 +46,7 @@ dependencies: [
 ### 🎨 Property Wrappers
 - [`@ViewState`](#viewstate)
 - [`@Shared`](#shared)
+- [`@SharedViewState`](#sharedviewstate)
 - [`@Emit` State Tracking](#emit-state-tracking)
 
 ### 🔧 Features
@@ -244,6 +246,22 @@ struct State {
 
 > ⚠️ `@Shared` does not automatically update the UI when values change.
 
+### `@SharedViewState`
+
+`@SharedViewState` combines the sharing capabilities of `@Shared` with the automatic UI updating of `@ViewState`. It manages shared state values that trigger SwiftUI updates when changed.
+
+```swift
+struct State {
+    @SharedViewState var sharedCount: Int = 0
+    /// When ignoreEquality = true, SwiftUI View updates even when the same value is set
+    @SharedViewState(ignoreEquality: true) var forceSharedUpdate: Bool = false
+    /// animation: When animation is set, animation is applied when the value changes
+    @SharedViewState(animation: .default) var animatedSharedValue: Double = 0.0
+}
+```
+
+> ⚠️ **Warning**: Setting `ignoreEquality` to `true` may cause unnecessary updates to the SwiftUI view.
+
 ### `@Emit` State Tracking
 
 `@Emit` triggers updates even when the same value is set.
@@ -434,7 +452,6 @@ extension MyFactory: DependencyInjectable {
     }
 }
 ```
-
 
 ## 🏗️ Roadmap
 

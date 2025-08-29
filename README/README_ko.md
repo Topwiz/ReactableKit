@@ -19,6 +19,7 @@
 ### 🎨 프로퍼티 래퍼
 - [`@ViewState`](#-viewstate)
 - [`@Shared`](#-shared)
+- [`@SharedViewState`](#-sharedviewstate)
 - [`@Emit` 상태 추적](#-상태-추적을-위한-emit-사용)
 
 ### 🔧 기능
@@ -193,7 +194,7 @@ struct State {
     /// ignoreEquality = true 인 경우는 같은 값이 set이 되면 SwiftUI View가 업데이트 됩니다.
     @ViewState(ignoreEquality: true) var forceUpdate: Bool = false
     /// animation: 애니메이션을 설정한 경우는 값이 변경될 때 애니메이션을 적용합니다.
-    @ViewState(animation: .default) var forceUpdate: Bool = false
+    @ViewState(animation: .default) var animatedValue: Double = 0.0
 }
 ```
 
@@ -219,6 +220,22 @@ struct State {
 ```
 
 > ⚠️ `@Shared`는 값이 변경되어도 UI를 자동으로 업데이트하지 않습니다.
+
+### `@SharedViewState`
+
+@SharedViewState는 @Shared처럼 상태를 부모와 자식 컴포넌트 간에 공유하면서, @ViewState처럼 값이 바뀔 때 SwiftUI 뷰를 자동으로 업데이트해줍니다.
+
+```swift
+struct State {
+    @SharedViewState var sharedCount: Int = 0
+    /// ignoreEquality = true 인 경우는 같은 값이 set이 되면 SwiftUI View가 업데이트 됩니다.
+    @SharedViewState(ignoreEquality: true) var forceSharedUpdate: Bool = false
+    /// animation: 애니메이션을 설정한 경우는 값이 변경될 때 애니메이션을 적용합니다.
+    @SharedViewState(animation: .default) var animatedSharedValue: Double = 0.0
+}
+```
+
+> ⚠️ **경고**: `ignoreEquality`를 `true`로 설정하면 SwiftUI 뷰에 불필요한 업데이트가 발생할 수 있습니다.
 
 ### `@Emit` 상태 추적
 

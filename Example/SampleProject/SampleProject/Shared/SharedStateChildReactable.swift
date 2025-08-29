@@ -12,7 +12,7 @@ import Combine
 final class SharedStateChildReactable: Reactable, PathState, ObservableEvent, @unchecked Sendable {
     
     enum Action {
-        case sharedStateUpdated(SharedStateReactable.SharedState)
+        case sharedStateUpdated(SharedStateReactable.Drawable)
         case change
     }
     
@@ -21,7 +21,7 @@ final class SharedStateChildReactable: Reactable, PathState, ObservableEvent, @u
     }
     
     struct State {
-        @Shared(.file()) var sharedState = SharedStateReactable.SharedState()
+        @Shared var sharedState = SharedStateReactable.Drawable()
         @ViewState var name: String = ""
         var index: Int = 0
     }

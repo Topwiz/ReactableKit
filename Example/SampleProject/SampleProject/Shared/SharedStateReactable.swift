@@ -14,7 +14,7 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
     enum Action {
         case changeData
         case removeAllData
-        case sharedStateChanged(SharedState)
+//        case sharedStateChanged(SharedState)
         case childAction(ObservableEventResult<SharedStateChildReactable>)
     }
     
@@ -24,24 +24,17 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
         var isPremium: Bool = false
     }
     
-    struct SharedState: Codable, Equatable {
-        var username: String = ""
-        var age: Int = 0
-        var isPremium: Bool = false
-    }
-    
     struct State {
-        @Shared(.memory) var isPremium = false
-        @Shared(.file(path: "testing/")) var sharedState = SharedState()
-        @Shared(.file(path: "testing/")) var bool = false
-        @ViewState var drawable: Drawable = .init()
+//        @Shared(.memory) var isPremium = false
+//        @Shared(.file(path: "testing/")) var sharedState = SharedState()
+//        @Shared(.file(path: "testing/")) var bool = false
+        @SharedViewState var drawable: Drawable = .init()
         let childReactable = SharedStateChildReactable()
     }
     
     enum Mutation {
+        case bypass(Action)
         case updateDrawable
-        case removeSharedState
-        case setSharedState(SharedState)
     }
     
     var initialState: State
@@ -57,21 +50,9 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
     
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         switch action {
-        case let .sharedStateChanged(value):
-            print("sharedStateChanged: \(value)")
-            return .just(.updateDrawable)
-            
-        case .removeAllData:
-            return .just(.removeSharedState)
-            
-        case .changeData:
-            var newValue = currentState.sharedState
-            newValue.age = Int.random(in: 0...100)
-            newValue.isPremium = Bool.random()
-            return .concat([
-                .just(.setSharedState(newValue)),
-                .just(.updateDrawable),
-            ])
+        case .removeAllData,
+                .changeData:
+            return .just(.bypass(action))
             
         case let .childAction(action):
             print("childAction state: \(action.state)")
@@ -81,17 +62,15 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
     
     func reduce(state: inout State, mutation: Mutation) {
         switch mutation {
-        case .removeSharedState:
-            state.$sharedState.removeFromStorage()
-            state.sharedState = SharedState()
+        case .bypass(.removeAllData):
+            state.drawable = .init()
             
-        case let .setSharedState(value):
-            state.bool = !state.bool
-            state.sharedState = value
+        case .bypass(.changeData):
+            state.drawable.age = Int.random(in: 0...100)
+            state.drawable.isPremium = Bool.random()
             
-        case .updateDrawable:
-            state.drawable.age = state.sharedState.age
-            state.drawable.isPremium = state.sharedState.isPremium
+        default:
+            break
         }
     }
     
@@ -115,9 +94,6 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
         
         
         return .merge([
-            self.currentState.$sharedState.publisher
-                .map(Action.sharedStateChanged)
-                .eraseToAnyPublisher(),
             localChildEvent,
         ])
     }

@@ -32,7 +32,7 @@ public struct AnyPathState: PathState, Hashable, @unchecked Sendable {
     }
 }
 
-public struct ReactablePath: Hashable {
+public struct ReactablePath: Hashable, @unchecked Sendable {
     private var id: String = UUID().uuidString
     private var path: NavigationPath = .init()
     
