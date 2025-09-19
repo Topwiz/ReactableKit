@@ -7,9 +7,9 @@
 
 import Foundation
 import ReactableKit
-import Combine
 
-final class BindingReactable: Reactable, PathState, @unchecked Sendable {
+@MainActor
+final class BindingReactable: Reactable, PathState {
     
     enum Action {
         case isOnChanged
@@ -33,15 +33,13 @@ final class BindingReactable: Reactable, PathState, @unchecked Sendable {
         self.initialState = state
     }
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
         switch action {
         case .isOnChanged:
-            return .empty()
+            break  // No mutation needed
             
         case .emitTest:
-            return .run { send in
-                await send(.emitTest)
-            }
+            await send(.emitTest)
         }
     }
     

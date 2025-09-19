@@ -21,10 +21,16 @@ struct NavigationStackView: View {
                         Text("Basic Counter Example")
                     }
                     
-                    NavigationLink {
-                        AsyncAwaitReactable()
+                    Button {
+                        self.store.action(.pushAsyncStressTest)
                     } label: {
-                        Text("Async Await Example")
+                        Text("Async Stress Test 🔥")
+                    }
+                    
+                    Button {
+                        self.store.action(.pushCancellableExample)
+                    } label: {
+                        Text("Cancellation Patterns")
                     }
                     
                     NavigationLink {
@@ -63,8 +69,13 @@ struct NavigationStackView: View {
             }
         } destination: { reactable in
             switch reactable {
-            case let reactable as CounterReactable:
-                CounterView(reactable: reactable)
+            case let reactable as AsyncCounterReactable:
+                AsyncCounterView(reactable: reactable)
+                
+            case let reactable as AsyncStressTestReactable:
+                AsyncStressTestView(reactable: reactable)
+            case let reactable as CancellableReactable:
+                CancellableAsyncView()
                 
             case let reactable as BindingReactable:
                 BindingView(store: Store(reactable))
@@ -77,9 +88,6 @@ struct NavigationStackView: View {
                 
             case let reactable as ForEachReactable:
                 ForEachView(store: Store(reactable))
-                
-            case let reactable as AsyncAwaitReactable:
-                AsyncAwaitView(reactable: reactable)
                 
             case let reactable as TodoListReactable:
                 TodoListView(reactable: reactable)

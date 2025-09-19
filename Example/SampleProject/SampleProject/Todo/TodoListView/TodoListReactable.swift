@@ -8,6 +8,7 @@
 import Foundation
 import ReactableKit
 
+@MainActor
 final class TodoListReactable: Reactable, PathState {
     
     enum Action {
@@ -31,8 +32,8 @@ final class TodoListReactable: Reactable, PathState {
     
     let initialState: State = State()
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
-        return .just(.bypass(action))
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
+        await send(.bypass(action))
     }
     
     func reduce(state: inout State, mutation: Mutation) {
@@ -50,13 +51,13 @@ final class TodoListReactable: Reactable, PathState {
         }
     }
     
-    func transformAction() -> AnyPublisher<Action, Never> {
-        let todoDataList = self.currentState.$todoDataList.publisher
-            .map(Action.todoListUpdated(todoList:))
-            .eraseToAnyPublisher()
-        
-        return .merge([
-            todoDataList,
-        ])
+    func transformAction() -> AsyncStream<Action>? {
+        return AsyncStream { continuation in
+            Task {
+                for await value in self.state.$todoDataList.publisher.values {
+                    continuation.yield(.todoListUpdated(todoList: value))
+                }
+            }
+        }
     }
 }

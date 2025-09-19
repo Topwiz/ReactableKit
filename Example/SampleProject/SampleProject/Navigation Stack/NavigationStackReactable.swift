@@ -8,12 +8,14 @@
 import Foundation
 import ReactableKit
 import SwiftUI
-import Combine
 
+@MainActor
 final class NavigationStackReactable: Reactable {
    
     enum Action {
         case pushCounter
+        case pushAsyncStressTest
+        case pushCancellableExample
     }
     
     struct State {
@@ -26,10 +28,14 @@ final class NavigationStackReactable: Reactable {
     
     var initialState: State = .init()
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
         switch action {
         case .pushCounter:
-            return .just(.push(CounterReactable()))
+            await send(.push(AsyncCounterReactable()))
+        case .pushAsyncStressTest:
+            await send(.push(AsyncStressTestReactable()))
+        case .pushCancellableExample:
+            await send(.push(CancellableReactable()))
         }
     }
     

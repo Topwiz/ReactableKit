@@ -9,8 +9,10 @@ import Foundation
 import UIKit
 import SwiftUI
 import ReactableKit
+import Combine
 
-final class UIKitExampleReactable: Reactable, PathState, @unchecked Sendable {
+@MainActor
+final class UIKitExampleReactable: Reactable, PathState {
     
     enum Action {
         case changeTitle
@@ -29,13 +31,17 @@ final class UIKitExampleReactable: Reactable, PathState, @unchecked Sendable {
     
     var initialState: State = .init()
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
+    init() {
+        self.initialize()
+    }
+    
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
         switch action {
         case .changeTitle:
-            return .just(.setTitle(randomString(length: 5)))
+            await send(.setTitle(randomString(length: 5)))
             
         case .updateEmit:
-            return .just(.setEmit)
+            await send(.setEmit)
         }
     }
     
@@ -66,7 +72,7 @@ final class UIKitView: UIView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        self.reactable = .init()
+        self.reactable = UIKitExampleReactable()
         self.addSubview(self.titleLabel)
         self.addSubview(self.button)
         self.addSubview(self.emitButton)
@@ -105,18 +111,16 @@ final class UIKitView: UIView {
 
 extension UIKitView: ReactableView {
     func bind(reactable: UIKitExampleReactable) {
-        reactable.state.map { $0.title }
+        reactable.statePublisher.map { $0.title }
             .debug()
             .distinctUntilChanged()
-            .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] title in
+            .sink { [weak self] title in
                 self?.titleLabel.text = title
-            })
+            }
             .store(in: &self.cancellables)
         
         reactable.emit(\.$emitTest)
             .debug()
-            .receive(on: DispatchQueue.main)
             .sink(receiveValue: { value in
                 print("$emitTest: \(value)")
             })

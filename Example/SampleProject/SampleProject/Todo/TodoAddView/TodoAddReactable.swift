@@ -8,6 +8,7 @@
 import Foundation
 import ReactableKit
 
+@MainActor
 final class TodoAddReactable: Reactable, PathState {
     
     enum Action {
@@ -32,19 +33,15 @@ final class TodoAddReactable: Reactable, PathState {
     
     let initialState: State = .init()
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
         switch action {
         case .titleChanged,
                 .contentChanged:
-            return .run { send in
-                await send(.updateAddButtonEnabled)
-            }
+            await send(.updateAddButtonEnabled)
             
         case .addTodoTapped:
-            return .run { send in
-                await send(.addTodo)
-                await send(.dismiss)
-            }
+            await send(.addTodo)
+            await send(.dismiss)
         }
     }
     

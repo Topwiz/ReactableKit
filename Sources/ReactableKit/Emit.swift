@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 extension Emit: @unchecked Sendable where Value: Sendable {}
 
@@ -49,7 +50,7 @@ extension Emit: Equatable where Value: Equatable {
 
 extension Reactable {
     public func emit<T>(_ keyPath: KeyPath<State, Emit<T>>) -> AnyPublisher<T, Never> {
-        self.state
+        self.statePublisher
             .map { $0[keyPath: keyPath] }
             .removeDuplicates { $0.count == $1.count }
             .map(\.wrappedValue)
@@ -81,4 +82,5 @@ extension View {
             }
         }
     }
+    
 }

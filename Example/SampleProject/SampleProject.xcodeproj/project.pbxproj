@@ -9,13 +9,15 @@
 /* Begin PBXBuildFile section */
 		A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
 		A18CED002D8B1EEB00AF84BD /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A18CECFF2D8B1EEB00AF84BD /* ReactableKit */; };
-		A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */; };
-		A18CED0E2D8D036200AF84BD /* AsyncAwaitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */; };
 		A18CED1A2D8D781000AF84BD /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED192D8D781000AF84BD /* TodoListView.swift */; };
 		A18CED1C2D8D785700AF84BD /* TodoListReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED1B2D8D785700AF84BD /* TodoListReactable.swift */; };
 		A18CED232D8D78E600AF84BD /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED222D8D78E600AF84BD /* TodoItem.swift */; };
 		A18CED292D8D7D3A00AF84BD /* TodoAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED282D8D7D3A00AF84BD /* TodoAddView.swift */; };
 		A18CED2B2D8D7D4000AF84BD /* TodoAddReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED2A2D8D7D4000AF84BD /* TodoAddReactable.swift */; };
+		A1C5224A2E7D2B8C00D3923C /* CounterAsyncExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C522492E7D2B8C00D3923C /* CounterAsyncExample.swift */; };
+		A1C5224B2E7D2B8C00D3923C /* CounterAsyncExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C522492E7D2B8C00D3923C /* CounterAsyncExample.swift */; };
+		A1CA39342E7D4A9000DD63DB /* AsyncStressTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CA39322E7D4A9000DD63DB /* AsyncStressTest.swift */; };
+		A1CA39372E7D51FB00DD63DB /* CancellableAsyncExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CA39352E7D51FB00DD63DB /* CancellableAsyncExample.swift */; };
 		A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */; };
 		A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */; };
 		A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
@@ -23,8 +25,6 @@
 		A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80B2D433508009391A2 /* ExmapleApp.swift */; };
 		A1F2B80F2D433508009391A2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1F2B8072D433508009391A2 /* Preview Assets.xcassets */; };
 		A1F2B8102D433508009391A2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1F2B8092D433508009391A2 /* Assets.xcassets */; };
-		A1F2B8122D43351D009391A2 /* CounterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B8112D43351D009391A2 /* CounterView.swift */; };
-		A1F2B8142D433524009391A2 /* CounterReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B8132D433524009391A2 /* CounterReactable.swift */; };
 		A1F2B8192D433E5D009391A2 /* NavigationStackReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B8182D433E5D009391A2 /* NavigationStackReactable.swift */; };
 		A1F2B81D2D460217009391A2 /* BindingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B81C2D460217009391A2 /* BindingView.swift */; };
 		A1F2B81F2D46021D009391A2 /* BindingReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B81E2D46021D009391A2 /* BindingReactable.swift */; };
@@ -34,7 +34,6 @@
 		A1F2B82B2D499D70009391A2 /* SharedStateChildReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B82A2D499D70009391A2 /* SharedStateChildReactable.swift */; };
 		A1F2B82E2D49D4CF009391A2 /* ManagerSampleReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B82D2D49D4CF009391A2 /* ManagerSampleReactable.swift */; };
 		A1F2B83E2D4FA3AE009391A2 /* UIKitExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B83D2D4FA3AE009391A2 /* UIKitExample.swift */; };
-		A1FE06C42D67914D00E010AA /* CounterReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B8132D433524009391A2 /* CounterReactable.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,14 +47,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitReactable.swift; sourceTree = "<group>"; };
-		A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitView.swift; sourceTree = "<group>"; };
 		A18CED192D8D781000AF84BD /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
 		A18CED1B2D8D785700AF84BD /* TodoListReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListReactable.swift; sourceTree = "<group>"; };
 		A18CED222D8D78E600AF84BD /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		A18CED282D8D7D3A00AF84BD /* TodoAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoAddView.swift; sourceTree = "<group>"; };
 		A18CED2A2D8D7D4000AF84BD /* TodoAddReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoAddReactable.swift; sourceTree = "<group>"; };
 		A1AC02292D432F870021693D /* ExmapleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExmapleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1C522492E7D2B8C00D3923C /* CounterAsyncExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CounterAsyncExample.swift; sourceTree = "<group>"; };
+		A1CA39322E7D4A9000DD63DB /* AsyncStressTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncStressTest.swift; sourceTree = "<group>"; };
+		A1CA39352E7D51FB00DD63DB /* CancellableAsyncExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancellableAsyncExample.swift; sourceTree = "<group>"; };
 		A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachReactable.swift; sourceTree = "<group>"; };
 		A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachView.swift; sourceTree = "<group>"; };
 		A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyInjectableExmaple.swift; sourceTree = "<group>"; };
@@ -63,8 +63,6 @@
 		A1F2B8092D433508009391A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1F2B80A2D433508009391A2 /* NavigationStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStackView.swift; sourceTree = "<group>"; };
 		A1F2B80B2D433508009391A2 /* ExmapleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExmapleApp.swift; sourceTree = "<group>"; };
-		A1F2B8112D43351D009391A2 /* CounterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CounterView.swift; sourceTree = "<group>"; };
-		A1F2B8132D433524009391A2 /* CounterReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CounterReactable.swift; sourceTree = "<group>"; };
 		A1F2B8182D433E5D009391A2 /* NavigationStackReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStackReactable.swift; sourceTree = "<group>"; };
 		A1F2B81C2D460217009391A2 /* BindingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingView.swift; sourceTree = "<group>"; };
 		A1F2B81E2D46021D009391A2 /* BindingReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingReactable.swift; sourceTree = "<group>"; };
@@ -104,15 +102,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A18CED0A2D8D033700AF84BD /* Async Await */ = {
-			isa = PBXGroup;
-			children = (
-				A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */,
-				A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */,
-			);
-			path = "Async Await";
-			sourceTree = "<group>";
-		};
 		A18CED132D8D766F00AF84BD /* Todo */ = {
 			isa = PBXGroup;
 			children = (
@@ -167,6 +156,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		A1CA39332E7D4A9000DD63DB /* StressTest */ = {
+			isa = PBXGroup;
+			children = (
+				A1CA39322E7D4A9000DD63DB /* AsyncStressTest.swift */,
+			);
+			path = StressTest;
+			sourceTree = "<group>";
+		};
+		A1CA39362E7D51FB00DD63DB /* CancellableExample */ = {
+			isa = PBXGroup;
+			children = (
+				A1CA39352E7D51FB00DD63DB /* CancellableAsyncExample.swift */,
+			);
+			path = CancellableExample;
+			sourceTree = "<group>";
+		};
 		A1CED20A2D5E3C50006A2F9E /* ForEach  */ = {
 			isa = PBXGroup;
 			children = (
@@ -187,8 +192,7 @@
 		A1F2B8062D433508009391A2 /* Counter */ = {
 			isa = PBXGroup;
 			children = (
-				A1F2B8112D43351D009391A2 /* CounterView.swift */,
-				A1F2B8132D433524009391A2 /* CounterReactable.swift */,
+				A1C522492E7D2B8C00D3923C /* CounterAsyncExample.swift */,
 			);
 			path = Counter;
 			sourceTree = "<group>";
@@ -215,7 +219,8 @@
 				A1F2B8082D433508009391A2 /* Preview Content */,
 				A1F2B8092D433508009391A2 /* Assets.xcassets */,
 				A1F2B80B2D433508009391A2 /* ExmapleApp.swift */,
-				A18CED0A2D8D033700AF84BD /* Async Await */,
+				A1CA39362E7D51FB00DD63DB /* CancellableExample */,
+				A1CA39332E7D4A9000DD63DB /* StressTest */,
 				A1F2B8062D433508009391A2 /* Counter */,
 			);
 			path = SampleProject;
@@ -378,15 +383,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1CA39372E7D51FB00DD63DB /* CancellableAsyncExample.swift in Sources */,
 				A1F2B8292D499D55009391A2 /* SharedStateChildView.swift in Sources */,
 				A1F2B8252D48F543009391A2 /* SharedStateReactable.swift in Sources */,
 				A1F2B8272D48F54D009391A2 /* SharedStateView.swift in Sources */,
-				A1F2B8142D433524009391A2 /* CounterReactable.swift in Sources */,
 				A18CED1A2D8D781000AF84BD /* TodoListView.swift in Sources */,
 				A18CED232D8D78E600AF84BD /* TodoItem.swift in Sources */,
+				A1C5224B2E7D2B8C00D3923C /* CounterAsyncExample.swift in Sources */,
 				A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */,
 				A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */,
-				A18CED0E2D8D036200AF84BD /* AsyncAwaitView.swift in Sources */,
 				A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */,
 				A1F2B81D2D460217009391A2 /* BindingView.swift in Sources */,
 				A18CED1C2D8D785700AF84BD /* TodoListReactable.swift in Sources */,
@@ -394,11 +399,10 @@
 				A18CED292D8D7D3A00AF84BD /* TodoAddView.swift in Sources */,
 				A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */,
 				A1F2B82B2D499D70009391A2 /* SharedStateChildReactable.swift in Sources */,
+				A1CA39342E7D4A9000DD63DB /* AsyncStressTest.swift in Sources */,
 				A1F2B8192D433E5D009391A2 /* NavigationStackReactable.swift in Sources */,
 				A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */,
 				A18CED2B2D8D7D4000AF84BD /* TodoAddReactable.swift in Sources */,
-				A1F2B8122D43351D009391A2 /* CounterView.swift in Sources */,
-				A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */,
 				A1F2B81F2D46021D009391A2 /* BindingReactable.swift in Sources */,
 				A1F2B82E2D49D4CF009391A2 /* ManagerSampleReactable.swift in Sources */,
 			);
@@ -408,8 +412,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1C5224A2E7D2B8C00D3923C /* CounterAsyncExample.swift in Sources */,
 				A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */,
-				A1FE06C42D67914D00E010AA /* CounterReactable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

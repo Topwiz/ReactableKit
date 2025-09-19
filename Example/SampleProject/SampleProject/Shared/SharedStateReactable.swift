@@ -9,7 +9,8 @@ import Foundation
 import ReactableKit
 import Combine
 
-final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
+@MainActor
+final class SharedStateReactable: Reactable, PathState {
     
     enum Action {
         case changeData
@@ -38,25 +39,19 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
     }
     
     var initialState: State
-    var cancelTask = PassthroughSubject<CancelTask, Never>()
-    
-    enum CancelTask {
-        case test
-    }
     
     init(state: State = .init()) {
         self.initialState = state
     }
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
         switch action {
         case .removeAllData,
                 .changeData:
-            return .just(.bypass(action))
+            await send(.bypass(action))
             
         case let .childAction(action):
             print("childAction state: \(action.state)")
-            return .empty()
         }
     }
     
@@ -74,28 +69,16 @@ final class SharedStateReactable: Reactable, PathState, @unchecked Sendable {
         }
     }
     
-    func transformAction() -> AnyPublisher<Action, Never> {
-//        let globalChildEvent = SharedStateChildReactable.observe()
-//            .filter { result in
-//                if case .change = result.action { return true }
-//                return false
-//            }
-//            .map(Action.childAction)
-//            .eraseToAnyPublisher()
-        
-        // local child event
-        let localChildEvent = self.currentState.childReactable.observe()
-            .filter { result in
-                if case .change = result.action { return true }
-                return false
+    func transformAction() -> AsyncStream<Action>? {
+        return AsyncStream { continuation in
+            Task {
+                for await result in self.state.childReactable.observe() {
+                    if case .change = result.action {
+                        continuation.yield(.childAction(result))
+                    }
+                }
             }
-            .map(Action.childAction)
-            .eraseToAnyPublisher()
-        
-        
-        return .merge([
-            localChildEvent,
-        ])
+        }
     }
 
 }

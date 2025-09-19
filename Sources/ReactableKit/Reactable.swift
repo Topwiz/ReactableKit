@@ -1,205 +1,217 @@
 //
 //  Reactable.swift
-//  Reactable
+//  ReactableKit
 //
-//  Created by Jeehoon Son on 1/23/25.
+//  Created by Jeehoon Son on 1/24/25.
 //
 
 import SwiftUI
-@_exported import Combine
+import Combine
 
-private enum WeakCache {
-    nonisolated(unsafe) static let queue = WeakKeyDictionary<AnyObject, DispatchQueue>()
-    nonisolated(unsafe) static let cancellables = WeakKeyDictionary<AnyObject, Set<AnyCancellable>>()
-    nonisolated(unsafe) static let stream = WeakKeyDictionary<AnyObject, Any>()
-    nonisolated(unsafe) static let currentState = WeakKeyDictionary<AnyObject, Any>()
-    nonisolated(unsafe) static let isStub = WeakKeyDictionary<AnyObject, Bool>()
-    nonisolated(unsafe) static let completion = WeakKeyDictionary<AnyObject, Any>()
-    nonisolated(unsafe) static let resultSubject = WeakKeyDictionary<AnyObject, Any>()
-    nonisolated(unsafe) static let asyncAction = WeakKeyDictionary<AnyObject, Any>()
+/// AsyncStream-based Stream structure
+public struct ReactableStream<Action: Sendable, State: Sendable> {
+    let action: AsyncChannel<Action>
+    let state: AsyncChannel<State>
 }
 
+/// Action with continuation for async response
+struct IdentityAction<Action: Sendable, State: Sendable> {
+    let action: Action
+    let continuation: CheckedContinuation<State, Never>?
+    
+    init(action: Action, continuation: CheckedContinuation<State, Never>? = nil) {
+        self.action = action
+        self.continuation = continuation
+    }
+}
+
+/// Type for sending mutations
+public typealias MutationSender<Mutation> = @Sendable @MainActor (Mutation) async -> Void
+
+/// Pure Async/Await based Reactable protocol
+@MainActor
 public protocol Reactable: AnyObject, IdentityHashable {
     associatedtype Action: Sendable
     associatedtype Mutation: Sendable
     associatedtype State: Sendable
-    typealias AsyncMutation = (Mutation) async -> Void
     
     var initialState: State { get }
-    var state: AnyPublisher<State, Never> { get }
-    var currentState: State { get }
-    var queue: DispatchQueue { get set }
-    var cancellables: Set<AnyCancellable> { get set }
-    var resultSubject: PassthroughSubject<ObservableEventResult<Self>, Never> { get set }
+    var state: State { get }
+    var currentState: State? { get }
+    var statePublisher: AnyPublisher<State, Never> { get }
     
     func initialize()
+    func action(_ action: Action) async -> State
     func action(_ action: Action)
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never>
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async
     func reduce(state: inout State, mutation: Mutation)
-    func transformAction() -> AnyPublisher<Action, Never>
+    func transformAction() -> AsyncStream<Action>?
 }
 
+// MARK: - Private Cache
+
+enum ReactableCache {
+    nonisolated(unsafe) static let stream = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let currentState = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let taskBag = WeakKeyDictionary<AnyObject, TaskCancellableBag>()
+    nonisolated(unsafe) static let stateObservers = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let statePublisher = WeakKeyDictionary<AnyObject, Any>()
+    nonisolated(unsafe) static let isStub = WeakKeyDictionary<AnyObject, Bool>()
+    nonisolated(unsafe) static let identityActionChannel = WeakKeyDictionary<AnyObject, Any>()
+}
+
+// MARK: - Default Implementation
+@MainActor
 public extension Reactable {
     
-    private var stream: Stream<Action, State> {
-        WeakCache.stream.forceCastedValue(forKey: self, default: self.createStream())
+    // MARK: Properties
+    
+    private var stream: ReactableStream<Action, State> {
+        ReactableCache.stream.forceCastedValue(
+            forKey: self,
+            default: self.createStream()
+        )
     }
     
-    var state: AnyPublisher<State, Never> {
-        self.stream.state.publisher()
+    private var identityActionChannel: AsyncChannel<IdentityAction<Action, State>> {
+        ReactableCache.identityActionChannel.forceCastedValue(
+            forKey: self,
+            default: AsyncChannel<IdentityAction<Action, State>>()
+        )
     }
     
-    var currentState: State {
-        WeakCache.currentState.forceCastedValue(forKey: self, default: self.initialState)
+    private var taskBag: TaskCancellableBag {
+        ReactableCache.taskBag.forceCastedValue(
+            forKey: self,
+            default: TaskCancellableBag()
+        )
     }
     
-    var queue: DispatchQueue {
-        get { WeakCache.queue.forceCastedValue(forKey: self, default: .main) }
-        set { WeakCache.queue.setValue(newValue, forKey: self) }
+    internal(set) var state: State {
+        get {
+            ReactableCache.currentState.forceCastedValue(forKey: self, default: self.initialState)
+        }
+        set {
+            ReactableCache.currentState.setValue(newValue, forKey: self)
+            self.stateSubject.send(newValue)
+            Task {
+                await self.stream.state.send(newValue)
+            }
+        }
     }
     
-    var cancellables: Set<AnyCancellable> {
-        get { WeakCache.cancellables.forceCastedValue(forKey: self, default: []) }
-        set { WeakCache.cancellables.setValue(newValue, forKey: self) }
+    var statePublisher: AnyPublisher<State, Never> {
+        self.stateSubject
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
     }
     
-    var resultSubject: PassthroughSubject<ObservableEventResult<Self>, Never> {
-        get { WeakCache.resultSubject.forceCastedValue(forKey: self, default: .init()) }
-        set { WeakCache.resultSubject.setValue(newValue, forKey: self) }
+    internal var stateSubject: CurrentValueSubject<State, Never> {
+        ReactableCache.statePublisher.forceCastedValue(
+            forKey: self,
+            default: CurrentValueSubject(self.initialState)
+        )
     }
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
-        Empty<Mutation, Never>().eraseToAnyPublisher()
+    /// Synchronous thread-safe way to get current state
+    /// Returns the cached state value which is thread-safe to read
+    nonisolated var currentState: State? {
+        ReactableCache.currentState.value(forKey: self) as? State
     }
+    
+    /// Test stub support
+    var isStub: Bool {
+        get { ReactableCache.isStub.forceCastedValue(forKey: self, default: false) }
+        set { ReactableCache.isStub.setValue(newValue, forKey: self) }
+    }
+    
+    // MARK: Public Methods
+    
+    func initialize() {
+        self.taskBag.cancel()
+        _ = self.stream
+        
+        self.state = self.initialState
+        
+        Task {
+            await self.startStreamProcessing()
+        }
+    }
+    
+    @discardableResult
+    func action(_ action: Action) async -> State {
+        await withCheckedContinuation { continuation in
+            let identity = IdentityAction<Action, State>(action: action, continuation: continuation)
+            Task {
+                await self.identityActionChannel.send(identity)
+            }
+        }
+    }
+    
+    @discardableResult
+    func action(_ action: Action) {
+        let identity = IdentityAction<Action, State>(action: action, continuation: nil)
+        Task {
+            await self.identityActionChannel.send(identity)
+        }
+    }
+    
+    // MARK: Default Implementations
+    
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async { }
     
     func reduce(state: inout State, mutation: Mutation) { }
     
-    func transformAction() -> AnyPublisher<Action, Never> {
-        .empty()
-    }
+    func transformAction() -> AsyncStream<Action>? { nil }
     
-    func initialize() {
-        _ = self.state
-    }
+    // MARK: Private Methods
     
-    @MainActor
-    internal func setState(_ state: State) {
-        WeakCache.currentState.setValue(state, forKey: self)
-    }
-    
-    internal var asyncAction: PassthroughSubject<IdentityAction, Never> {
-        get { WeakCache.asyncAction.forceCastedValue(forKey: self, default: .init()) }
-        set { WeakCache.asyncAction.setValue(newValue, forKey: self) }
-    }
-}
-
-public extension Reactable {
-    
-    internal typealias IdentityAction = Identity<Self, Self.Action>
-    
-    func action(_ action: Action) {
-        let stream = self.stream
-        self.queue.async {
-            stream.action.send(action)
-        }
-    }
-    
-    internal func asyncAction(_ action: IdentityAction) {
-        let asyncAction = self.asyncAction
-        self.queue.async {
-            asyncAction.send(action)
-        }
-    }
-    
-    @MainActor
-    @discardableResult
-    internal func mainActorAction(_ action: Action) async -> State {
-        return await withCheckedContinuation { [weak self] continuation in
-            guard let self else { return }
-            let identity = IdentityAction(action: action, continuation: continuation)
-            self.asyncAction(identity)
-        }
-    }
-    
-    @discardableResult
-    func asyncAction(_ action: Action) async -> State {
-        return await withCheckedContinuation { [weak self] continuation in
-            guard let self else { return }
-            let identity = IdentityAction(action: action, continuation: continuation)
-            self.asyncAction(identity)
-        }
-    }
-    
-    private func createStream() -> Stream<Action, State> {
-        let actionSubject = PassthroughSubject<Action, Never>()
-        let stateSubject = ReplaySubject<State, Never>(bufferSize: 1)
-
-        let transformedActionStream = self.transformAction()
-            .eraseToAnyPublisher()
-
-        let mergedActionStream = Publishers.Merge3(
-            actionSubject.map { Identity(action: $0) }.eraseToAnyPublisher(),
-            transformedActionStream.map { Identity(action: $0) }.eraseToAnyPublisher(),
-            self.asyncAction.eraseToAnyPublisher()
+    private func createStream() -> ReactableStream<Action, State> {
+        let actionChannel = AsyncChannel<Action>()
+        let stateChannel = AsyncChannel<State>()
+        
+        return ReactableStream(
+            action: actionChannel,
+            state: stateChannel
         )
-            .receive(on: self.queue)
-
-        let mutationStream = mergedActionStream
-            .flatMap { [weak self] identity -> AnyPublisher<(IdentityAction, Mutation), Never> in
-                guard let self = self else { return .empty() }
-                return self.mutate(action: identity.action)
-                    .map { (identity, $0) }
-                    .handleEvents(receiveCompletion: { [weak self] completion in
-                        guard let self else { return }
-                        if case .finished = completion {
-                            self.sendGlobalActionIfNeeded(identity.action, state: self.currentState)
-                            if let completion = identity.continuation {
-                                completion.resume(returning: self.currentState)
-                            }
-                        }
-                    })
-                    .eraseToAnyPublisher()
-            }
-
-        let stateStream = mutationStream
-            .scan((nil as IdentityAction?, self.initialState)) { [weak self] acc, tuple in
-                guard let self else { return acc }
-                let (_, prevState) = acc
-                let (action, mutation) = tuple
-                var newState = prevState
-                self.reduce(state: &newState, mutation: mutation)
-                return (action, newState)
-            }
-            .handleEvents(receiveOutput: { [weak self] (action, newState) in
-                guard let self else { return }
-                WeakCache.currentState.setValue(newState, forKey: self)
-            })
-            .map { $0.1 }
-            .eraseToAnyPublisher()
-
-        stateStream
-            .sink(receiveValue: stateSubject.send)
-            .store(in: &self.cancellables)
-
-        return Stream(action: actionSubject, state: stateSubject)
     }
-}
-
-// MARK: - Stub
-
-public extension Reactable {
-    var isStub: Bool {
-        get { WeakCache.isStub.forceCastedValue(forKey: self, default: false) }
-        set { WeakCache.isStub.setValue(newValue, forKey: self) }
+    
+    private func startStreamProcessing() async {
+        if let transformedActions = self.transformAction() {
+            Task {
+                for await action in transformedActions {
+                    guard !Task.isCancelled else { break }
+                    let identity = IdentityAction<Action, State>(action: action)
+                    await self.identityActionChannel.send(identity)
+                }
+            }.store(in: self.taskBag)
+        }
+        
+        Task {
+            for await action in self.stream.action {
+                guard !Task.isCancelled else { break }
+                let identity = IdentityAction<Action, State>(action: action)
+                await self.identityActionChannel.send(identity)
+            }
+        }.store(in: self.taskBag)
+        
+        for await identity in identityActionChannel {
+            guard !Task.isCancelled else { break }
+            
+            Task { @MainActor [weak self] in
+                guard let self else {
+                    return
+                }
+                
+                await self.mutate(action: identity.action, state: self.state) { mutation in
+                    var newState = self.state
+                    self.reduce(state: &newState, mutation: mutation)
+                    self.state = newState
+                }
+                
+                self.sendObservableEvent(identity.action, state: self.state)
+                identity.continuation?.resume(returning: self.state)
+            }
+        }
     }
-}
-
-struct Stream<A: Sendable, S: Sendable>: Sendable {
-    var action: PassthroughSubject<A, Never>
-    var state: ReplaySubject<S, Never>
-}
-
-struct Identity<R: Reactable, A: Sendable>: Sendable {
-    var action: A
-    var continuation: CheckedContinuation<R.State, Never>?
 }

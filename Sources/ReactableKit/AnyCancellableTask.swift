@@ -34,7 +34,9 @@ public final class TaskCancellableBag {
 
 
 extension Task {
-    public func store(in bag: TaskCancellableBag) {
+    @discardableResult
+    public func store(in bag: TaskCancellableBag) -> Task {
         bag.add(task: self)
+        return self
     }
 }

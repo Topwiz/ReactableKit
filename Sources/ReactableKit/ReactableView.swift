@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 private enum WeakCache {
     nonisolated(unsafe) static let reactable = WeakKeyDictionary<AnyObject, Any>()

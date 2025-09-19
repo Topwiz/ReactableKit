@@ -7,9 +7,9 @@
 
 import Foundation
 import ReactableKit
-import Combine
 
-final class SharedStateChildReactable: Reactable, PathState, ObservableEvent, @unchecked Sendable {
+@MainActor
+final class SharedStateChildReactable: Reactable, PathState, ObservableEvent {
     
     enum Action {
         case sharedStateUpdated(SharedStateReactable.Drawable)
@@ -32,25 +32,16 @@ final class SharedStateChildReactable: Reactable, PathState, ObservableEvent, @u
     }
     
     var initialState: State = State()
-    var cancelTask = PassthroughSubject<CancelTask, Never>()
     
-    enum CancelTask {
-        case test
-    }
-    
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
         switch action {
         case .change:
-            self.cancelTask.send(.test)
-            return .concat([
-                .just(.setSharedName(randomString(length: 5))),
-                .empty().delay(for: 3, scheduler: queue),
-                .just(.setSharedName(randomString(length: 5)))
-            ])
-            .takeUntil(self.cancelTask.filter { $0 == .test }.eraseToAnyPublisher())
+            await send(.setSharedName(randomString(length: 5)))
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            await send(.setSharedName(randomString(length: 5)))
 
         case let .sharedStateUpdated(value):
-            return .just(.setName(value.username))
+            await send(.setName(value.username))
         }
     }
     
@@ -64,12 +55,14 @@ final class SharedStateChildReactable: Reactable, PathState, ObservableEvent, @u
         }
     }
     
-    func transformAction() -> AnyPublisher<Action, Never> {
-        return .merge([
-            self.currentState.$sharedState.publisher
-                .map(Action.sharedStateUpdated)
-                .eraseToAnyPublisher(),
-        ])
+    func transformAction() -> AsyncStream<Action>? {
+        return AsyncStream { continuation in
+            Task {
+                for await value in self.state.$sharedState.publisher.values {
+                    continuation.yield(.sharedStateUpdated(value))
+                }
+            }
+        }
     }
 
 }

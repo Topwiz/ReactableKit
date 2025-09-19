@@ -8,6 +8,7 @@
 import Foundation
 import ReactableKit
 
+@MainActor
 final class ForEachReactable: Reactable, PathState {
     
     enum Action {
@@ -32,8 +33,8 @@ final class ForEachReactable: Reactable, PathState {
     
     let initialState: State = State()
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
-        return .just(.bypass(action))
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
+        await send(.bypass(action))
     }
     
     func reduce(state: inout State, mutation: Mutation) {

@@ -8,9 +8,10 @@
 import Foundation
 import ReactableKit
 
+@MainActor
 final class ManagerSampleReactable: Reactable {
     
-    nonisolated(unsafe) static var shared: ManagerSampleReactable = ManagerSampleReactable()
+    static var shared: ManagerSampleReactable = ManagerSampleReactable()
     
     enum Action {
         case test
@@ -30,10 +31,10 @@ final class ManagerSampleReactable: Reactable {
         self.initialize()
     }
     
-    func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
+    func mutate(action: Action, state: State, send: @escaping MutationSender<Mutation>) async {
         switch action {
         case .test:
-            return .just(.setTest(randomString(length: 10)))
+            await send(.setTest(randomString(length: 10)))
         }
     }
     
@@ -44,16 +45,19 @@ final class ManagerSampleReactable: Reactable {
         }
     }
     
-    func transformAction() -> AnyPublisher<Action, Never> {
-        .empty()
+    func transformAction() -> AsyncStream<Action>? {
+        nil
     }
 
 }
 
+@MainActor
 final class ManagerSampleContainer {
-    nonisolated(unsafe) static var shared: ManagerSampleContainer = ManagerSampleContainer()
+    static var shared: ManagerSampleContainer = ManagerSampleContainer()
     
     func updateAsyncState() {
-        ManagerSampleReactable.shared.action(.test)
+        Task { @MainActor in
+            await ManagerSampleReactable.shared.action(.test)
+        }
     }
 }
