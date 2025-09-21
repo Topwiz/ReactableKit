@@ -156,25 +156,6 @@ public extension Publisher {
 
 public extension Publisher {
     
-    /// Observes values and completion states using `sink`.
-    /// - Parameters:
-    ///   - receiveCompletion: A closure handling completion events.
-    ///   - receiveValue: A closure handling emitted values.
-    /// - Returns: A cancellable instance.
-    func sink(
-        receiveCompletion: ((Subscribers.Completion<Failure>) -> Void)? = nil,
-        receiveValue: ((Output) -> Void)? = nil
-    ) -> AnyCancellable {
-        return self.sink(
-            receiveCompletion: { completion in
-                receiveCompletion?(completion)
-            },
-            receiveValue: { value in
-                receiveValue?(value)
-            }
-        )
-    }
-    
     /// Adds logging for debugging purposes.
     /// - Parameter prefix: The prefix for log messages.
     /// - Returns: A publisher with logging applied.
@@ -206,6 +187,7 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
             let taskHolder = TaskHolder()
             
             return subject
+                .receive(on: DispatchQueue.main)
                 .handleEvents(
                     receiveSubscription: { _ in
                         taskHolder.task = Task {
@@ -221,6 +203,81 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
                     }
                 )
                 .eraseToAnyPublisher()
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    /// Creates a publisher that emits a single value from an async operation
+    /// - Parameter operation: An async operation that returns a single value
+    /// - Returns: A publisher that emits the result value once and then completes
+    static func async(
+        _ operation: @Sendable @escaping () async -> Output
+    ) -> AnyPublisher<Output, Never> {
+        Deferred {
+            let subject = PassthroughSubject<Output, Never>()
+            let taskHolder = TaskHolder()
+            
+            return subject
+                .handleEvents(
+                    receiveSubscription: { _ in
+                        taskHolder.task = Task {
+                            guard !Task.isCancelled else { return }
+                            let result = await operation()
+                            guard !Task.isCancelled else { return }
+                            subject.send(result)
+                            subject.send(completion: .finished)
+                        }
+                    },
+                    receiveCancel: {
+                        taskHolder.task?.cancel()
+                    }
+                )
+                .eraseToAnyPublisher()
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    /// Creates a publisher that emits a single value from a MainActor async operation
+    /// - Parameter operation: A MainActor async operation that returns a single value
+    /// - Returns: A publisher that emits the result value once and then completes
+    static func mainAsync(
+        _ operation: @MainActor @escaping () async -> Output
+    ) -> AnyPublisher<Output, Never> {
+        Deferred {
+            let subject = PassthroughSubject<Output, Never>()
+            let taskHolder = TaskHolder()
+            
+            return subject
+                .handleEvents(
+                    receiveSubscription: { _ in
+                        taskHolder.task = Task { @MainActor in
+                            guard !Task.isCancelled else { return }
+                            let result = await operation()
+                            guard !Task.isCancelled else { return }
+                            subject.send(result)
+                            subject.send(completion: .finished)
+                        }
+                    },
+                    receiveCancel: {
+                        taskHolder.task?.cancel()
+                    }
+                )
+                .eraseToAnyPublisher()
+        }
+        .eraseToAnyPublisher()
+    }
+
+    
+    /// Maps each value from the publisher using a MainActor async transformation
+    /// - Parameter transform: A MainActor async transformation function
+    /// - Returns: A publisher that emits transformed values
+    func mainAsyncMap<T: Sendable>(
+        _ transform: @MainActor @escaping (Output) async -> T
+    ) -> AnyPublisher<T, Never> {
+        self.flatMap { value in
+            AnyPublisher<T, Never>.mainAsync {
+                return await transform(value)
+            }
         }
         .eraseToAnyPublisher()
     }
