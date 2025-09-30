@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
+		A180B8132E8BFBDC00086A6C /* SafeAsyncReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A180B8102E8BFBDC00086A6C /* SafeAsyncReactable.swift */; };
+		A180B8142E8BFBDC00086A6C /* SafeAsyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A180B8112E8BFBDC00086A6C /* SafeAsyncView.swift */; };
 		A18CED002D8B1EEB00AF84BD /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A18CECFF2D8B1EEB00AF84BD /* ReactableKit */; };
 		A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */; };
 		A18CED0E2D8D036200AF84BD /* AsyncAwaitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */; };
@@ -48,6 +50,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A180B8102E8BFBDC00086A6C /* SafeAsyncReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeAsyncReactable.swift; sourceTree = "<group>"; };
+		A180B8112E8BFBDC00086A6C /* SafeAsyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeAsyncView.swift; sourceTree = "<group>"; };
 		A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitReactable.swift; sourceTree = "<group>"; };
 		A18CED0D2D8D036200AF84BD /* AsyncAwaitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitView.swift; sourceTree = "<group>"; };
 		A18CED192D8D781000AF84BD /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
@@ -104,6 +108,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A180B8122E8BFBDC00086A6C /* SafeAsync */ = {
+			isa = PBXGroup;
+			children = (
+				A180B8102E8BFBDC00086A6C /* SafeAsyncReactable.swift */,
+				A180B8112E8BFBDC00086A6C /* SafeAsyncView.swift */,
+			);
+			path = SafeAsync;
+			sourceTree = "<group>";
+		};
 		A18CED0A2D8D033700AF84BD /* Async Await */ = {
 			isa = PBXGroup;
 			children = (
@@ -212,6 +225,7 @@
 				A1F2B8232D48F52A009391A2 /* Shared */,
 				A1F2B81B2D460200009391A2 /* Binding View */,
 				A1F2B81A2D45FE20009391A2 /* Navigation Stack */,
+				A180B8122E8BFBDC00086A6C /* SafeAsync */,
 				A1F2B8082D433508009391A2 /* Preview Content */,
 				A1F2B8092D433508009391A2 /* Assets.xcassets */,
 				A1F2B80B2D433508009391A2 /* ExmapleApp.swift */,
@@ -379,6 +393,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1F2B8292D499D55009391A2 /* SharedStateChildView.swift in Sources */,
+				A180B8132E8BFBDC00086A6C /* SafeAsyncReactable.swift in Sources */,
+				A180B8142E8BFBDC00086A6C /* SafeAsyncView.swift in Sources */,
 				A1F2B8252D48F543009391A2 /* SharedStateReactable.swift in Sources */,
 				A1F2B8272D48F54D009391A2 /* SharedStateView.swift in Sources */,
 				A1F2B8142D433524009391A2 /* CounterReactable.swift in Sources */,

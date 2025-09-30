@@ -31,7 +31,7 @@ struct ReactableTests {
             switch action {
             case .increment:
                 return .run { [currentState = self.currentState] send in
-                    await send(.setCount(currentState.count + 1))
+                    send(.setCount(currentState.count + 1))
                 }
                 
             case .decrement:

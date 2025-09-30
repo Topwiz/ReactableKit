@@ -40,7 +40,7 @@ final class BindingReactable: Reactable, PathState, @unchecked Sendable {
             
         case .emitTest:
             return .run { send in
-                await send(.emitTest)
+                send(.emitTest)
             }
         }
     }

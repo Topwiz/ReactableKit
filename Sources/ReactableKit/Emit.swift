@@ -50,7 +50,6 @@ extension Emit: Equatable where Value: Equatable {
 extension Reactable {
     public func emit<T>(_ keyPath: KeyPath<State, Emit<T>>) -> AnyPublisher<T, Never> {
         self.state
-            .receive(on: DispatchQueue.main)
             .map { $0[keyPath: keyPath] }
             .removeDuplicates { $0.count == $1.count }
             .map(\.wrappedValue)
@@ -62,7 +61,6 @@ extension Store {
     public func emit<T>(_ keyPath: KeyPath<R.State, Emit<T>>) -> AnyPublisher<T, Never> {
         let startCount = self.state[keyPath: keyPath].count
         return self.publisher
-            .receive(on: DispatchQueue.main)
             .map { $0[keyPath: keyPath] }
             .removeDuplicates { $0.count == $1.count }
             .drop(while: { $0.count == startCount })
@@ -91,7 +89,9 @@ private struct EmitModifier<R: Reactable, T: Sendable>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onAppear {
-                self.cancellable = self.store.emit(self.keyPath).bind(to: self.action)
+                self.cancellable = self.store.emit(self.keyPath)
+                    .receive(on: DispatchQueue.main)
+                    .bind(to: self.action)
             }
             .onDisappear {
                 self.cancellable?.cancel()

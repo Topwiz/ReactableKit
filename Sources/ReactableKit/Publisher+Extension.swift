@@ -177,10 +177,39 @@ final class TaskHolder {
     var task: Task<Void, Never>?
 }
 
+/// A type that can send values back into the publisher when used from `run` operations.
+/// This type implements `callAsFunction` so that you invoke it as a function.
+public struct Send<Output>: Sendable {
+    let send: @Sendable (Output) -> Void
+    
+    public init(send: @escaping @Sendable (Output) -> Void) {
+        self.send = send
+    }
+    
+    /// Sends a value back into the publisher from an async operation.
+    /// - Parameter output: The value to send.
+    public func callAsFunction(_ output: Output) {
+        guard !Task.isCancelled else { return }
+        self.send(output)
+    }
+}
+
 public extension AnyPublisher where Output: Sendable, Failure == Never {
     
+    /// Creates a publisher that wraps an asynchronous unit of work that can emit values any number of times.
+    ///
+    /// The closure provided to `run` is allowed to throw, but any non-cancellation errors thrown
+    /// will be handled by the optional `catch` parameter.
+    ///
+    /// - Parameters:
+    ///   - priority: Priority of the underlying task. If `nil`, the priority will come from `Task.currentPriority`.
+    ///   - operation: The async operation to execute.
+    ///   - handler: An error handler, invoked if the operation throws an error other than `CancellationError`.
+    /// - Returns: A publisher wrapping the given asynchronous work.
     static func run(
-        _ operation: @Sendable @escaping (@Sendable (Output) async -> Void) async -> Void
+        priority: TaskPriority? = nil,
+        operation: @Sendable @escaping (_ send: Send<Output>) async throws -> Void,
+        catch handler: (@Sendable (_ error: any Error, _ send: Send<Output>) async -> Void)? = nil
     ) -> AnyPublisher<Output, Never> {
         Deferred {
             let subject = PassthroughSubject<Output, Never>()
@@ -190,12 +219,33 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
                 .receive(on: DispatchQueue.main)
                 .handleEvents(
                     receiveSubscription: { _ in
-                        taskHolder.task = Task {
-                            await operation { output in
-                                guard !Task.isCancelled else { return }
-                                subject.send(output)
+                        taskHolder.task = Task(priority: priority) { @MainActor in
+                            let send = Send<Output> { output in
+                                Task { @MainActor in
+                                    guard !Task.isCancelled else { return }
+                                    subject.send(output)
+                                }
                             }
-                            subject.send(completion: .finished)
+                            
+                            do {
+                                try await operation(send)
+                                
+                                guard !Task.isCancelled else { return }
+                                subject.send(completion: .finished)
+                            } catch is CancellationError {
+                                return
+                            } catch {
+                                guard let handler else {
+                                    #if DEBUG
+                                    Swift.print("ReactableKit: Unhandled error in run operation: \(error)")
+                                    #endif
+                                    return
+                                }
+                                await handler(error, send)
+                                
+                                guard !Task.isCancelled else { return }
+                                subject.send(completion: .finished)
+                            }
                         }
                     },
                     receiveCancel: {
@@ -223,9 +273,11 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
                         taskHolder.task = Task {
                             guard !Task.isCancelled else { return }
                             let result = await operation()
-                            guard !Task.isCancelled else { return }
-                            subject.send(result)
-                            subject.send(completion: .finished)
+                            Task { @MainActor in
+                                guard !Task.isCancelled else { return }
+                                subject.send(result)
+                                subject.send(completion: .finished)
+                            }
                         }
                     },
                     receiveCancel: {

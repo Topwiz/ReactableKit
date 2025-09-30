@@ -31,13 +31,13 @@ final class AsyncAwaitReactable: Reactable, PathState, @unchecked Sendable {
         switch action {
         case .run:
             return .run { [service] send in
-                await send(.setCount(1))
+                send(.setCount(1))
                 try? await Task.sleep(nanoseconds: 2 * 1_000_000_000) // 2 seconds delay
-                await send(.setCount(2))
+                send(.setCount(2))
                 try? await Task.sleep(nanoseconds: 2 * 1_000_000_000) // 2 seconds delay
                 guard !Task.isCancelled else { return }
                 print(service.test())
-                await send(.setCount(3))
+                send(.setCount(3))
             }
             .takeUntil(self.cancelTask.eraseToAnyPublisher())
             

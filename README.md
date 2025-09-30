@@ -67,14 +67,21 @@ final class CounterReactable: Reactable {
     enum Action: Sendable {
         case increase
         case decrease
+        case loadData
     }
     
     struct State: Sendable {
         var count: Int = 0
+        var isLoading: Bool = false
+        var data: String = ""
+        var errorMessage: String? = nil
     }
     
     enum Mutation: Sendable {
         case setCount(Int)
+        case setLoading(Bool)
+        case setData(String)
+        case setError(String)
     }
     
     let initialState = State()
@@ -86,7 +93,23 @@ final class CounterReactable: Reactable {
             
         case .decrease:
             return .run { send in 
-                await send(.setCount(self.currentState.count - 1))
+                send(.setCount(self.currentState.count - 1))
+            }
+            
+        case .loadData:
+            return .run(priority: .userInitiated) { send in
+                send(.setLoading(true))
+                
+                // Simulate async operation that can throw
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                let data = try await fetchDataFromAPI()
+                
+                send(.setData(data))
+                send(.setLoading(false))
+            } catch: { error, send in
+                // Handle errors safely
+                send(.setLoading(false))
+                send(.setError(error.localizedDescription))
             }
         }
     }
@@ -95,6 +118,12 @@ final class CounterReactable: Reactable {
         switch mutate {
         case let .setCount(value):
             state.count = value
+        case let .setLoading(isLoading):
+            state.isLoading = isLoading
+        case let .setData(data):
+            state.data = data
+        case let .setError(error):
+            state.errorMessage = error
         }
     }
 }

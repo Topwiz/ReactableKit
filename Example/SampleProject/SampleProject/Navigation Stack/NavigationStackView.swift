@@ -50,6 +50,12 @@ struct NavigationStackView: View {
                     } label: {
                         Text("[NavigationLink] ForEach")
                     }
+                    
+                    NavigationLink {
+                        SafeAsyncView()
+                    } label: {
+                        Text("🧪 Safe Async & Send 순서 테스트")
+                    }
                 }
                 
                 Section("Project Example") {
