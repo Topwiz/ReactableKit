@@ -21,14 +21,14 @@ public enum StorageType: Hashable {
     case memorySingleton
 }
 
-// MARK: - @Shared (Unified)
+// MARK: - @Shared
 
 extension Shared: @unchecked Sendable where Value: Sendable {}
 
 @propertyWrapper
 public struct Shared<Value>: CustomStringConvertible {
     private let box: Box
-    
+    var key: String { self.reference.key }
     private var reference: any MutableReference<Value> {
         get { box.reference }
         nonmutating set { box.reference = newValue }

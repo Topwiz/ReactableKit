@@ -13,6 +13,8 @@ protocol PublishedWrapper {
     func setOnChange(_ handler: @escaping () -> Void)
 }
 
+/// A property wrapper that manages a state value and notifies changes.
+/// - Warning: Setting `ignoreEquality` to `true` may cause unnecessary updates to the SwiftUI view.
 @propertyWrapper
 public final class ViewState<Value: Equatable & Sendable>: @unchecked Sendable, CustomStringConvertible, PublishedWrapper {
     @Atomic private var _value: Value
@@ -53,11 +55,6 @@ public final class ViewState<Value: Equatable & Sendable>: @unchecked Sendable, 
         "\(self.wrappedValue)"
     }
 
-    /// A property wrapper that manages a state value and notifies changes.
-    /// - Parameters:
-    ///   - ignoreEquality: A Boolean value that indicates whether to ignore equality checks when updating the state. Default is `false`.
-    ///   - animation: An optional animation to apply when the state changes. Default is `nil`.
-    /// - Warning: Setting `ignoreEquality` to `true` may cause unnecessary updates to the SwiftUI view.
     public init(wrappedValue: Value, ignoreEquality: Bool = false, animation: Animation? = nil) {
         self._value = wrappedValue
         self.ignoreEquality = ignoreEquality
@@ -71,5 +68,4 @@ public final class ViewState<Value: Equatable & Sendable>: @unchecked Sendable, 
     public static func == (lhs: ViewState<Value>, rhs: ViewState<Value>) -> Bool {
         lhs._value == rhs._value
     }
-    
 }

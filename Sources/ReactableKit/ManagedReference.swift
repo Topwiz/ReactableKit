@@ -31,21 +31,21 @@ protocol Reference<Value>: AnyObject, Sendable {
 }
 
 protocol MutableReference<Value>: Reference, Equatable {
+    var key: String { get set }
     func withLock<R>(_ body: (inout Value) throws -> R) rethrows -> R
 }
 
 // MARK: - PersistentReference
 
 final class PersistentReference<Value>: MutableReference, @unchecked Sendable {
-    private let key: String
+    var key: String
     private let storage: StorageType
     private let lock = NSRecursiveLock()
     
     private var value: Value {
-        willSet {
-            ManagedMemoryStorage.shared.notifyValueChange(newValue, forKey: self.key)
-        }
         didSet {
+            // Notify after the value is actually changed
+            ManagedMemoryStorage.shared.notifyValueChange(self.value, forKey: self.key)
             self.saveToStorage(self.value)
             ManagedMemoryStorage.shared.syncCachedValue(self.value, forKey: self.key)
         }
@@ -169,6 +169,10 @@ final class ManagedReference<Value>: MutableReference, @unchecked Sendable {
     var id: ObjectIdentifier { base.id }
     var wrappedValue: Value { base.wrappedValue }
     var publisher: AnyPublisher<Value, Never> { base.publisher }
+    var key: String {
+        get { base.key }
+        set { base.key = newValue }
+    }
     
     init(_ base: PersistentReference<Value>) {
         base.retain()
@@ -260,24 +264,21 @@ final class ManagedMemoryStorage: @unchecked Sendable {
     func publisher<Value>(forKey key: String, valueType: Value.Type) -> AnyPublisher<Value, Never> {
         lock.withLock {
             if let entry = storage[key], let subject = entry.subject as? PassthroughSubject<Value, Never> {
-                if let cachedValue = entry.cachedValue as? Value {
-                    return subject.prepend(cachedValue).eraseToAnyPublisher()
-                }
                 return subject.eraseToAnyPublisher()
             } else {
                 let subject = PassthroughSubject<Value, Never>()
-                let cachedValue = storage[key]?.cachedValue as? Value
                 
                 if var entry = storage[key] {
                     entry.subject = subject
                     storage[key] = entry
                 } else {
-                    let entry = Entry(cachedValue: Optional<Value>.none as Any, reference: nil, isSingleton: false, subject: subject)
+                    let entry = Entry(
+                        cachedValue: Optional<Value>.none as Any,
+                        reference: nil,
+                        isSingleton: false,
+                        subject: subject
+                    )
                     storage[key] = entry
-                }
-                
-                if let cachedValue = cachedValue {
-                    return subject.prepend(cachedValue).eraseToAnyPublisher()
                 }
                 
                 return subject.eraseToAnyPublisher()
