@@ -221,10 +221,8 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
                     receiveSubscription: { _ in
                         taskHolder.task = Task(priority: priority) { @MainActor in
                             let send = Send<Output> { output in
-                                Task { @MainActor in
-                                    guard !Task.isCancelled else { return }
-                                    subject.send(output)
-                                }
+                                guard !Task.isCancelled else { return }
+                                subject.send(output)
                             }
                             
                             do {

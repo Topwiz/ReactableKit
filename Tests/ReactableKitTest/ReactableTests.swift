@@ -15,14 +15,18 @@ struct ReactableTests {
         enum Action {
             case increment
             case decrement
+            case multipleIncrement(Int)
+            case multipleIncrementWithMainActor(Int)
         }
 
         struct State: Equatable, Sendable {
             var count: Int
+            var mutationCount: Int = 0
         }
 
         enum Mutation {
             case setCount(Int)
+            case incrementMutationCount
         }
 
         var initialState: State = State(count: 0)
@@ -36,6 +40,22 @@ struct ReactableTests {
                 
             case .decrement:
                 return .just(.setCount(self.currentState.count - 1))
+                
+            case .multipleIncrement(let times):
+                return .run { [currentState = self.currentState] send in
+                    for i in 1...times {
+                        send(.setCount(currentState.count + i))
+                        send(.incrementMutationCount)
+                    }
+                }
+                
+            case .multipleIncrementWithMainActor(let times):
+                return .run { @MainActor [currentState = self.currentState] send in
+                    for i in 1...times {
+                        send(.setCount(currentState.count + i))
+                        send(.incrementMutationCount)
+                    }
+                }
             }
         }
 
@@ -43,6 +63,8 @@ struct ReactableTests {
             switch mutation {
             case let .setCount(value):
                 state.count = value
+            case .incrementMutationCount:
+                state.mutationCount += 1
             }
         }
 
@@ -94,5 +116,31 @@ struct ReactableTests {
 
         #expect(receivedState?.count == 2, "Published state count should be 2")
         cancellable.cancel()
+    }
+    
+    // Test to verify multiple mutations work correctly without @MainActor
+    @Test
+    func testMultipleIncrementWithoutMainActor() async {
+        let reactable = MockReactable()
+        let stub = Stub(reactable)
+        
+        let finalState = await stub.action(.multipleIncrement(3))
+        
+        #expect(finalState.mutationCount == 3, "Mutation count should be 3 (one incrementMutationCount per iteration)")
+        #expect(finalState.count == 3, "Final count should be 3 (last setCount value)")
+    }
+    
+    // Test to verify @MainActor send works correctly after fix
+    @Test
+    func testMultipleIncrementWithMainActorWorks() async {
+        let reactable = MockReactable()
+        let stub = Stub(reactable)
+        
+        let finalState = await stub.action(.multipleIncrementWithMainActor(3))
+        
+        print("Final state with @MainActor: count=\(finalState.count), mutationCount=\(finalState.mutationCount)")
+        
+        #expect(finalState.mutationCount == 3, "@MainActor send should work correctly: mutationCount should be 3")
+        #expect(finalState.count == 3, "@MainActor send should work correctly: count should be 3")
     }
 }

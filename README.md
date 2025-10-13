@@ -114,7 +114,7 @@ final class CounterReactable: Reactable {
         }
     }
     
-    func reduce(state: inout State, mutate: Mutation) {
+    func reduce(state: inout State, mutation: Mutation) {
         switch mutate {
         case let .setCount(value):
             state.count = value
