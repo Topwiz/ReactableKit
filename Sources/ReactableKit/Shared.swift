@@ -19,6 +19,13 @@ public enum StorageType: Hashable {
     /// Singleton-like in-memory storage. Data is kept in process even if all references are released,
     /// and the next access will recreate a reference with the last cached value.
     case memorySingleton
+    
+    var isSingleton: Bool {
+        if case .memorySingleton = self { return true }
+        if case .userDefaults = self { return true }
+        if case .file = self { return false }
+        return false
+    }
 }
 
 // MARK: - @Shared

@@ -252,7 +252,7 @@ final class ManagedMemoryStorage: @unchecked Sendable {
             let entry = Entry(
                 cachedValue: storedValue,
                 reference: persistentReference,
-                isSingleton: storage == .memorySingleton,
+                isSingleton: storage.isSingleton,
                 subject: subject
             )
             self.storage[key] = entry
