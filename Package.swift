@@ -5,7 +5,10 @@ import PackageDescription
 
 let package = Package(
     name: "ReactableKit",
-    platforms: [.iOS(.v16)],
+    platforms: [
+        .iOS(.v16),
+        .macOS(.v15)
+    ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(name: "ReactableKit", targets: ["ReactableKit", "DependencyInjectableKit"]),
