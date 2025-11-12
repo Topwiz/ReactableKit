@@ -85,24 +85,20 @@ public struct Shared<Value>: CustomStringConvertible {
     }
     
     // MARK: - Box Container
-    
+
     private final class Box: @unchecked Sendable {
         private let lock = NSRecursiveLock()
         private var _reference: any MutableReference<Value>
-        
+
         var reference: any MutableReference<Value> {
             get {
-                lock.lock()
-                defer { lock.unlock() }
-                return _reference
+                lock.withLock { _reference }
             }
             set {
-                lock.lock()
-                defer { lock.unlock() }
-                _reference = newValue
+                lock.withLock { _reference = newValue }
             }
         }
-        
+
         init(_ reference: any MutableReference<Value>) {
             self._reference = reference
         }
