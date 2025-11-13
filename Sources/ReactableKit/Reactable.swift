@@ -28,7 +28,6 @@ public protocol Reactable: AnyObject, IdentityHashable {
     var initialState: State { get }
     var state: AnyPublisher<State, Never> { get }
     var currentState: State { get }
-    var queue: DispatchQueue { get set }
     var cancellables: Set<AnyCancellable> { get set }
     var resultSubject: PassthroughSubject<ObservableEventResult<Self>, Never> { get set }
     
@@ -51,11 +50,6 @@ public extension Reactable {
     
     var currentState: State {
         WeakCache.currentState.forceCastedValue(forKey: self, default: self.initialState)
-    }
-    
-    var queue: DispatchQueue {
-        get { WeakCache.queue.forceCastedValue(forKey: self, default: .main) }
-        set { WeakCache.queue.setValue(newValue, forKey: self) }
     }
     
     var cancellables: Set<AnyCancellable> {
@@ -99,14 +93,14 @@ public extension Reactable {
     
     func action(_ action: Action) {
         let stream = self.stream
-        self.queue.async {
+        DispatchQueue.main.async {
             stream.action.send(action)
         }
     }
     
     internal func asyncAction(_ action: IdentityAction) {
         let asyncAction = self.asyncAction
-        self.queue.async {
+        DispatchQueue.main.async {
             asyncAction.send(action)
         }
     }
@@ -142,7 +136,7 @@ public extension Reactable {
             transformedActionStream.map { Identity(action: $0) }.eraseToAnyPublisher(),
             self.asyncAction.eraseToAnyPublisher()
         )
-            .receive(on: self.queue)
+            .receive(on: DispatchQueue.main)
 
         let mutationStream = mergedActionStream
             .flatMap { [weak self] identity -> AnyPublisher<(IdentityAction, Mutation), Never> in
