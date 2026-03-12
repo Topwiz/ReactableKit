@@ -35,7 +35,11 @@ public extension ObservableEvent {
     
     func send(_ action: Action, state: State) {
         let key = String(describing: Self.self)
-        let result = ObservableEventResult<Self>(action: action, state: state)
+        let result = ObservableEventResult<Self>(
+            action: action,
+            state: state,
+            sourceId: ObjectIdentifier(self)
+        )
         if let subject = Cache.observableEvent.value(forKey: key) as? PassthroughSubject<ObservableEventResult<Self>, Never> {
             subject.send(result)
         }
@@ -46,6 +50,7 @@ public extension ObservableEvent {
 public struct ObservableEventResult<R: Reactable>: @unchecked Sendable {
     public let action: R.Action
     public var state: R.State
+    public let sourceId: ObjectIdentifier
 }
 
 private struct AnyObservableEvent {

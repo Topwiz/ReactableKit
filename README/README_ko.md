@@ -303,6 +303,8 @@ ZStack { }
 
 `ObservableEvent`는 **자식 컴포넌트와 부모 컴포넌트간 액션을 전송**할 수 있게 해줍니다.
 
+#### 기본: 정적 `observe()`와 인스턴스 `observe()`
+
 ```swift
 // 자식 Reactable
 class ChildReactable: Reactable, ObservableEvent {
@@ -311,30 +313,87 @@ class ChildReactable: Reactable, ObservableEvent {
     }
 }
 
-// 부모 Reactable
+// 부모 Reactable - 모든 인스턴스 관찰 (글로벌)
 func transformAction() -> AnyPublisher<Action, Never> {
-     // 글로벌하게 모든 ChildReactable의 액션과 변경된 상태를 관찰
     let childEvent = ChildReactable.observe()
-        .filter { result in // result 에는 발생한 액션과 액션이 끝난 시점의 Child State가 포함됩니다.
+        .filter { result in
             if case .notifyParent = result.action { return true }
             return false
         }
         .map(Action.parentAction)
         .eraseToAnyPublisher()
-        
-    // 특정 reactable 액션을 관찰
+
+    // 특정 인스턴스 관찰 (자식이 항상 state에 있을 때)
     let localChildEvent = self.currentState.childReactable.observe()
-        .filter { result in // result 에는 발생한 액션과 액션이 끝난 시점의 Child State가 포함됩니다.
+        .filter { result in
             if case .notifyParent = result.action { return true }
             return false
         }
         .map(Action.parentAction)
         .eraseToAnyPublisher()
-        
-    return .merge([
-        childEvent,
-    ])
-}  
+
+    return .merge([childEvent, localChildEvent])
+}
+```
+
+#### 권장: `child` (내 자식으로 한정)
+
+같은 자식 타입을 여러 부모가 사용할 때, `ChildType.observe()`는 이벤트를 **모든** 부모에게 전달합니다. `child`를 사용하면 **나의** 자식 인스턴스에서 오는 이벤트만 받을 수 있습니다:
+
+```swift
+// 부모 State - 자식은 non-optional 또는 optional
+struct State {
+    var childReactable: ChildReactable           // non-optional
+    var optionalChild: ChildReactable?           // optional (예: lazy-loaded)
+}
+
+// 부모 transformAction
+func transformAction() -> AnyPublisher<Action, Never> {
+    // Non-optional: 구독하려면 .observe() 호출
+    let childEvents = self.child(\.childReactable)
+        .observe()
+        .filter { result in
+            if case .notifyParent = result.action { return true }
+            return false
+        }
+        .map(Action.parentAction)
+        .eraseToAnyPublisher()
+
+    // Optional: 동일한 패턴 – 구독하려면 .observe() 호출
+    let optionalChildEvents = self.child(\.optionalChild)
+        .observe()
+        .filter { result in
+            if case .notifyParent = result.action { return true }
+            return false
+        }
+        .map(Action.parentAction)
+        .eraseToAnyPublisher()
+
+    return .merge([childEvents, optionalChildEvents])
+}
+```
+
+#### 체인형 `child` (중첩된 옵셔널 자녀)
+
+옵셔널 자녀가 또 다른 옵셔널 자녀를 가질 때 (예: `parent → optionalChild? → optionalGrandchild?`) 체이닝해서 사용할 수 있습니다:
+
+```swift
+// 2단계 체인 (optional → optional)
+self.child(\.fullRouteReactable)
+    .child(\.routeDetailReactable)
+    .observe()
+    .sink { result in ... }
+    .store(in: &cancellables)
+
+// optional → non-optional 손자
+self.child(\.optionalChild)
+    .child(\.grandchild)
+    .observe()
+    .sink { ... }
+    .store(in: &cancellables)
+
+// 1단계 optional: 필터링 전에 .observe() 추가
+self.child(\.optionalChild).observe().sink { ... }
 ```
 
 ### `ReactableView` 프로토콜

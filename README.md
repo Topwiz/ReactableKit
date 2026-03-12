@@ -328,6 +328,8 @@ ZStack { }
 
 `ObservableEvent` enables **action transmission between child and parent components**.
 
+#### Basic: Static `observe()` and Instance `observe()`
+
 ```swift
 // Child Reactable
 class ChildReactable: Reactable, ObservableEvent {
@@ -336,30 +338,103 @@ class ChildReactable: Reactable, ObservableEvent {
     }
 }
 
-// Parent Reactable
+// Parent Reactable - observe all instances (global)
 func transformAction() -> AnyPublisher<Action, Never> {
-     // Globally observe all ChildReactable actions and changed states
     let childEvent = ChildReactable.observe()
-        .filter { result in // result contains the action that occurred and the Child State at the end of the action
+        .filter { result in
             if case .notifyParent = result.action { return true }
             return false
         }
         .map(Action.parentAction)
         .eraseToAnyPublisher()
-        
-    // Observe specific reactable actions
+
+    // Observe specific instance (when child is always in state)
     let localChildEvent = self.currentState.childReactable.observe()
-        .filter { result in // result contains the action that occurred and the Child State at the end of the action
+        .filter { result in
             if case .notifyParent = result.action { return true }
             return false
         }
         .map(Action.parentAction)
         .eraseToAnyPublisher()
-        
-    return .merge([
-        childEvent,
-    ])
-}  
+
+    return .merge([childEvent, localChildEvent])
+}
+```
+
+#### Recommended: `child` (Scoped to Your Child)
+
+When the same child type is used by multiple parents, `ChildType.observe()` delivers events to **all** parents. Use `child` to receive only events from **your** child instance. **Always call `.observe()`** to subscribe:
+
+```swift
+// Parent State - child can be non-optional or optional
+struct State {
+    var childReactable: ChildReactable           // non-optional
+    var optionalChild: ChildReactable?           // optional (e.g. lazy-loaded)
+}
+
+// Parent transformAction
+func transformAction() -> AnyPublisher<Action, Never> {
+    // Non-optional: call .observe() to subscribe
+    let childEvents = self.child(\.childReactable)
+        .observe()
+        .filter { result in
+            if case .notifyParent = result.action { return true }
+            return false
+        }
+        .map(Action.parentAction)
+        .eraseToAnyPublisher()
+
+    // Optional: same pattern – call .observe() to subscribe
+    let optionalChildEvents = self.child(\.optionalChild)
+        .observe()
+        .filter { result in
+            if case .notifyParent = result.action { return true }
+            return false
+        }
+        .map(Action.parentAction)
+        .eraseToAnyPublisher()
+
+    return .merge([childEvents, optionalChildEvents])
+}
+```
+
+**`child` benefits:**
+- **Unified API**: Both optional and non-optional require `.observe()` – no confusion about when to call it
+- **Filters by `sourceId`**: Only your child's events are delivered
+- **No wrong-parent routing**: When multiple parents share the same child type, each parent receives only its own child's events
+
+#### Chained `child` (Nested Optional Children)
+
+When you have nested optional children (e.g. `parent → optionalChild? → optionalGrandchild?`), chain `child` calls and call `.observe()` at the end:
+
+```swift
+// 2-level chain (optional → optional)
+self.child(\.fullRouteReactable)
+    .child(\.routeDetailReactable)
+    .observe()
+    .sink { result in ... }
+    .store(in: &cancellables)
+
+// optional → non-optional grandchild
+self.child(\.optionalChild)
+    .child(\.grandchild)
+    .observe()
+    .sink { ... }
+    .store(in: &cancellables)
+
+// Single-level optional
+self.child(\.optionalChild).observe().sink { ... }
+```
+
+#### `ObservableEventResult`
+
+```swift
+public struct ObservableEventResult<R: Reactable> {
+    public let action: R.Action
+    public var state: R.State
+    /// Identifies the Reactable instance that sent this event (for `child` filtering)
+    public let sourceId: ObjectIdentifier
+}
 ```
 
 ### `ReactableView` Protocol

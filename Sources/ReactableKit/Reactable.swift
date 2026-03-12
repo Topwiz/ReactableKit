@@ -128,6 +128,9 @@ public extension Reactable {
         let actionSubject = PassthroughSubject<Action, Never>()
         let stateSubject = ReplaySubject<State, Never>(bufferSize: 1)
 
+        let stream = Stream(action: actionSubject, state: stateSubject)
+        WeakCache.stream.setValue(stream, forKey: self)
+
         let transformedActionStream = self.transformAction()
             .eraseToAnyPublisher()
 
@@ -175,7 +178,7 @@ public extension Reactable {
             .sink(receiveValue: stateSubject.send)
             .store(in: &self.cancellables)
 
-        return Stream(action: actionSubject, state: stateSubject)
+        return stream
     }
 }
 
