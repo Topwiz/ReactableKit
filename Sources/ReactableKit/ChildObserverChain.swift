@@ -37,13 +37,14 @@ private func chainOptionalChild<Parent: Reactable, Child: Reactable & Observable
 ) -> AnyPublisher<Child?, Never> {
     parentPublisher
         .removeDuplicates(by: optionalIdentityEquals)
-        .flatMap(maxPublishers: .max(1)) { parent -> AnyPublisher<Child?, Never> in
+        .map { parent -> AnyPublisher<Child?, Never> in
             guard let parent else { return Just(nil).eraseToAnyPublisher() }
             return parent.state
                 .map { $0[keyPath: keyPath] }
                 .prepend(parent.currentState[keyPath: keyPath])
                 .eraseToAnyPublisher()
         }
+        .switchToLatest()
         .eraseToAnyPublisher()
 }
 
@@ -53,17 +54,19 @@ private func observeNonOptionalDescendant<Parent: Reactable, Child: Reactable & 
 ) -> AnyPublisher<ObservableEventResult<Child>, Never> {
     parentPublisher
         .removeDuplicates(by: optionalIdentityEquals)
-        .flatMap(maxPublishers: .max(1)) { parent -> AnyPublisher<ObservableEventResult<Child>, Never> in
+        .map { parent -> AnyPublisher<ObservableEventResult<Child>, Never> in
             guard let parent else { return Empty().eraseToAnyPublisher() }
             return parent.state
                 .map { $0[keyPath: keyPath] }
                 .prepend(parent.currentState[keyPath: keyPath])
                 .removeDuplicates(by: { ObjectIdentifier($0) == ObjectIdentifier($1) })
-                .flatMap(maxPublishers: .max(1)) { child in
+                .map { child -> AnyPublisher<ObservableEventResult<Child>, Never> in
                     child.observe().eraseToAnyPublisher()
                 }
+                .switchToLatest()
                 .eraseToAnyPublisher()
         }
+        .switchToLatest()
         .eraseToAnyPublisher()
 }
 
@@ -82,11 +85,12 @@ public struct DirectChildChain<Root: Reactable, Leaf: Reactable & ObservableEven
             .map { $0[keyPath: keyPath] }
             .prepend(root.currentState[keyPath: keyPath])
             .removeDuplicates(by: { ObjectIdentifier($0) == ObjectIdentifier($1) })
-
+        
         return childPublisher
-            .flatMap(maxPublishers: .max(1)) { child in
+            .map { child -> AnyPublisher<ObservableEventResult<Leaf>, Never> in
                 child.observe().eraseToAnyPublisher()
             }
+            .switchToLatest()
             .eraseToAnyPublisher()
     }
     
@@ -114,20 +118,22 @@ public struct DirectChildChain2<Root: Reactable, Leaf: Reactable & ObservableEve
             .map { $0[keyPath: path1] }
             .prepend(root.currentState[keyPath: path1])
             .removeDuplicates(by: { ObjectIdentifier($0) == ObjectIdentifier($1) })
-
+        
         return leafPublisher
-            .flatMap(maxPublishers: .max(1)) { leaf in
+            .map { leaf -> AnyPublisher<ObservableEventResult<T>, Never> in
                 let childPublisher = leaf.state
                     .map { $0[keyPath: path2] }
                     .prepend(leaf.currentState[keyPath: path2])
                     .removeDuplicates(by: { ObjectIdentifier($0) == ObjectIdentifier($1) })
-
+                
                 return childPublisher
-                    .flatMap(maxPublishers: .max(1)) { child in
+                    .map { child -> AnyPublisher<ObservableEventResult<T>, Never> in
                         child.observe().eraseToAnyPublisher()
                     }
+                    .switchToLatest()
                     .eraseToAnyPublisher()
             }
+            .switchToLatest()
             .eraseToAnyPublisher()
     }
 }
@@ -197,7 +203,7 @@ public struct ChildObserverChain<Root: Reactable, Leaf: Reactable & ObservableEv
             .eraseToAnyPublisher()
         return observeOptionalLeaf(leafPublisher)
     }
-
+    
     public func child<T: Reactable & ObservableEvent>(
         _ childKeyPath: KeyPath<Leaf.State, T>
     ) -> ChildChain2Direct<Root, Leaf, T> {
@@ -231,7 +237,7 @@ public struct ChildObserverChain2<Root: Reactable, Leaf: Reactable & ObservableE
             .eraseToAnyPublisher()
         return observeOptionalLeaf(chainOptionalChild(parentPublisher: leafPublisher, keyPath: path2))
     }
-
+    
     public func child<U: Reactable & ObservableEvent>(
         _ childKeyPath: KeyPath<T.State, U>
     ) -> ChildChain3Direct<Root, Leaf, T, U> {
