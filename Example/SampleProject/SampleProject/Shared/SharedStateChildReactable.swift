@@ -44,7 +44,7 @@ final class SharedStateChildReactable: Reactable, PathState, ObservableEvent, @u
             self.cancelTask.send(.test)
             return .concat([
                 .just(.setSharedName(randomString(length: 5))),
-                .empty().delay(for: 3, scheduler: queue),
+                .empty().delay(for: 3, scheduler: DispatchQueue.main),
                 .just(.setSharedName(randomString(length: 5)))
             ])
             .takeUntil(self.cancelTask.filter { $0 == .test }.eraseToAnyPublisher())

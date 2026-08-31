@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
+		BB01A0032E90000100000003 /* InstrumentPlaygroundReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB01A0012E90000100000001 /* InstrumentPlaygroundReactable.swift */; };
+		BB01A0042E90000100000004 /* InstrumentPlaygroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB01A0022E90000100000002 /* InstrumentPlaygroundView.swift */; };
 		A180B8132E8BFBDC00086A6C /* SafeAsyncReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A180B8102E8BFBDC00086A6C /* SafeAsyncReactable.swift */; };
 		A180B8142E8BFBDC00086A6C /* SafeAsyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A180B8112E8BFBDC00086A6C /* SafeAsyncView.swift */; };
 		A18CED002D8B1EEB00AF84BD /* ReactableKit in Frameworks */ = {isa = PBXBuildFile; productRef = A18CECFF2D8B1EEB00AF84BD /* ReactableKit */; };
@@ -50,6 +52,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BB01A0012E90000100000001 /* InstrumentPlaygroundReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentPlaygroundReactable.swift; sourceTree = "<group>"; };
+		BB01A0022E90000100000002 /* InstrumentPlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentPlaygroundView.swift; sourceTree = "<group>"; };
 		A180B8102E8BFBDC00086A6C /* SafeAsyncReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeAsyncReactable.swift; sourceTree = "<group>"; };
 		A180B8112E8BFBDC00086A6C /* SafeAsyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeAsyncView.swift; sourceTree = "<group>"; };
 		A18CED0B2D8D035E00AF84BD /* AsyncAwaitReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncAwaitReactable.swift; sourceTree = "<group>"; };
@@ -108,6 +112,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BB01A0052E90000100000005 /* Instrument */ = {
+			isa = PBXGroup;
+			children = (
+				BB01A0012E90000100000001 /* InstrumentPlaygroundReactable.swift */,
+				BB01A0022E90000100000002 /* InstrumentPlaygroundView.swift */,
+			);
+			path = Instrument;
+			sourceTree = "<group>";
+		};
 		A180B8122E8BFBDC00086A6C /* SafeAsync */ = {
 			isa = PBXGroup;
 			children = (
@@ -226,6 +239,7 @@
 				A1F2B81B2D460200009391A2 /* Binding View */,
 				A1F2B81A2D45FE20009391A2 /* Navigation Stack */,
 				A180B8122E8BFBDC00086A6C /* SafeAsync */,
+				BB01A0052E90000100000005 /* Instrument */,
 				A1F2B8082D433508009391A2 /* Preview Content */,
 				A1F2B8092D433508009391A2 /* Assets.xcassets */,
 				A1F2B80B2D433508009391A2 /* ExmapleApp.swift */,
@@ -355,7 +369,7 @@
 			mainGroup = A1AC02202D432F870021693D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A18CECFC2D8B1EB300AF84BD /* XCLocalSwiftPackageReference "../../../Reactable" */,
+				A18CECFC2D8B1EB300AF84BD /* XCLocalSwiftPackageReference "../.." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1AC022A2D432F870021693D /* Products */;
@@ -393,6 +407,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1F2B8292D499D55009391A2 /* SharedStateChildView.swift in Sources */,
+				BB01A0032E90000100000003 /* InstrumentPlaygroundReactable.swift in Sources */,
+				BB01A0042E90000100000004 /* InstrumentPlaygroundView.swift in Sources */,
 				A180B8132E8BFBDC00086A6C /* SafeAsyncReactable.swift in Sources */,
 				A180B8142E8BFBDC00086A6C /* SafeAsyncView.swift in Sources */,
 				A1F2B8252D48F543009391A2 /* SharedStateReactable.swift in Sources */,
@@ -692,9 +708,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A18CECFC2D8B1EB300AF84BD /* XCLocalSwiftPackageReference "../../../Reactable" */ = {
+		A18CECFC2D8B1EB300AF84BD /* XCLocalSwiftPackageReference "../.." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../Reactable;
+			relativePath = ../..;
 		};
 /* End XCLocalSwiftPackageReference section */
 

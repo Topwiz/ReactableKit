@@ -22,6 +22,9 @@
 - [`@SharedViewState`](#-sharedviewstate)
 - [`@Emit` 상태 추적](#-상태-추적을-위한-emit-사용)
 
+### 🔬 디버깅
+- [`ReactableInstrument` (사이클 성능 계측)](#-디버깅--reactableinstrument)
+
 ### 🔧 기능
 - [`ObservableEvent` (부모 자식간 통신)](#observableevent-부모-자식간-통신)
 - [`ReactableView` 프로토콜](#reactableview-프로토콜)
@@ -515,3 +518,106 @@ extension MyFactory: DependencyInjectable {
     }
 }
 ```
+
+
+## 🔬 디버깅 — `ReactableInstrument`
+
+`ReactableInstrument`는 Reactable 사이클의 각 단계를 계측하고, 임계를 넘는 단계를 경고합니다.
+**DEBUG 빌드에서만** 존재하며, 계측 파일과 `Reactable` 내부 호출부 전체가 `#if DEBUG`로 제거되므로
+릴리즈 빌드에는 아무것도 남지 않습니다.
+
+```
+action(_:) ─▶ [Queue] ─▶ [Mutate] ─▶ [Effect] ─▶ [Reduce] ─▶ state
+```
+
+| 단계 | 측정 대상 |
+|---|---|
+| `Queue` | 액션이 메인 큐에서 `mutate`가 실행되기까지 대기한 시간 |
+| `Mutate` | 뮤테이션 퍼블리셔를 구성하는 동기 비용 |
+| `Effect` | 그 퍼블리셔의 수명 (구독 ~ 완료) |
+| `Reduce` | 뮤테이션을 상태에 반영하는 동기 비용 |
+
+UI 밀림을 볼 때는 `Queue`를 보세요. 각 단계는 멀쩡해 보이는데 메인 큐가 막혀 액션이 적체되는 상황은
+큐 지연으로만 드러납니다.
+
+### 켜는 방법
+
+계측은 opt-in입니다. 필요한 Reactable에서 `instrumentation`을 재정의합니다.
+
+```swift
+#if DEBUG
+extension MyHighFrequencyReactable {
+    var instrumentation: ReactableInstrument.Options? { .default }
+}
+#endif
+```
+
+`Options`의 `label`로 같은 타입의 여러 인스턴스를 구분하고, `warningThreshold`로 이 Reactable만의
+임계를 지정할 수 있습니다.
+
+```swift
+var instrumentation: ReactableInstrument.Options? {
+    .init(label: "carplay", warningThreshold: 0.016)   // 60fps 기준 한 프레임
+}
+```
+
+코드 수정 없이 전체를 켜려면 스킴 환경변수에 `REACTABLE_INSTRUMENT = 1`을 넣거나, 디버그 메뉴에서
+런타임에 전환합니다.
+
+```swift
+ReactableInstrument.enabledByDefault = true
+ReactableInstrument.filter = { $0.contains("Guide") }   // Reactable 타입 이름 기준
+```
+
+우선순위: Reactable 자신의 `instrumentation`이 항상 최우선입니다. 그다음으로 `filter`가 설정되어 있으면
+`filter`가 단독으로 결정합니다 — `enabledByDefault`나 `REACTABLE_INSTRUMENT`가 켜져 있어도 이름이
+맞지 않으면 계측되지 않습니다. 즉 `filter`는 전역 스위치를 **좁히는** 용도입니다.
+
+### 경고
+
+임계(기본 50ms) 이상이면 경고 로그가 남습니다.
+
+```
+Slow reduce: playground.MyReactable updateLocation took 200.3ms (threshold 50.0ms)
+```
+
+경고는 reactable/stage/case 조합마다 `warningInterval`(기본 1초)당 1회로 제한되어 고빈도 스트림이
+로그를 도배하지 않습니다. 통계는 모든 샘플을 그대로 기록합니다.
+
+`Effect`는 `reduce`보다 상류에서 측정되고, Combine은 값을 `reduce`까지 동기적으로 전달한 뒤에야 완료
+이벤트를 보냅니다. 따라서 느린 `reduce`는 `Effect` 샘플도 함께 늘립니다. `Slow effect`와
+`Slow reduce`가 같은 액션을 지목하면 원인은 reduce이며, effect가 비동기 작업을 하는 게 아닙니다.
+
+### 집계 리포트
+
+```swift
+print(ReactableInstrument.report())
+```
+
+```
+ReactableInstrument report (threshold 50.0ms)
+REACTABLE    STAGE   CASE                COUNT        P50        P90        MAX
+MyReactable  queue   updateLocation        412      0.8ms     12.0ms    137.4ms
+MyReactable  reduce  setLocation           412      0.1ms      0.2ms      4.1ms
+```
+
+### 모든 계측 이벤트 관찰
+
+```swift
+ReactableInstrument.onEvent = { event in
+    // event.stage, event.reactable, event.name, event.duration
+}
+```
+
+이 훅에서 계측 중인 Reactable로 액션을 보내지 마세요. 그 사이클이 다시 이벤트를 만들어 무한 루프가 됩니다.
+
+### Instruments
+
+Edit Scheme ▸ Profile ▸ Build Configuration = **Debug**로 바꾸고 ⌘I → **os_signpost** 계기 추가 →
+subsystem `ReactableInstrument.subsystem`(기본값은 앱 번들 식별자) / category `Reactable` 확인.
+
+### 직접 확인하기
+
+샘플 앱에 플레이그라운드 화면이 있습니다 — `Example/SampleProject`의
+`📈 ReactableInstrument Playground`. 임계와 액션당 작업량 슬라이더, 각 단계를 일부러 느리게 만드는
+버튼, 메인 큐 적체를 재현하는 burst/flood 스트레스 테스트가 들어 있습니다.

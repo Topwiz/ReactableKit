@@ -56,6 +56,14 @@ struct NavigationStackView: View {
                     } label: {
                         Text("🧪 Safe Async & Send 순서 테스트")
                     }
+
+                    #if DEBUG
+                    NavigationLink {
+                        InstrumentPlaygroundView()
+                    } label: {
+                        Text("📈 ReactableInstrument Playground")
+                    }
+                    #endif
                 }
                 
                 Section("Project Example") {
