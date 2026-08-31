@@ -1,5 +1,7 @@
 # 🚀 ReactableKit
 
+**[🤖 AI 에이전트용 코딩 가이드](../AGENTS.md)** — ReactableKit과 DependencyInjectableKit 코드를 작성할 때 지켜야 할 규칙과 그 이유 (영문).
+
 ## 📌 Introduction
 
 **ReactableKit**은 **Combine** 기반으로 만들어진, **SwiftUI** 애플리케이션을 위한 가볍지만 강력한 상태 관리 프레임워크입니다.
