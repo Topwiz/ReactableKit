@@ -52,6 +52,12 @@ struct NavigationStackView: View {
                     }
                     
                     NavigationLink {
+                        DependencyView()
+                    } label: {
+                        Text("[NavigationLink] Dependency Injection")
+                    }
+
+                    NavigationLink {
                         SafeAsyncView()
                     } label: {
                         Text("🧪 Safe Async & Send 순서 테스트")

@@ -20,17 +20,57 @@ public extension DependencyInjectable {
     static var test: DependencyType { self.real }
 }
 
+@attached(peer, names: arbitrary)
+@attached(accessor)
+public macro Dependency<Value>(_ keyPath: KeyPath<GlobalDependencyKey, Value>) = #externalMacro(
+    module: "DependencyInjectableMacros",
+    type: "DependencyMacro"
+)
+
+public struct DependencyStorage<Value> {
+    private let box: Box
+
+    public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
+        self.box = Box(keyPath)
+    }
+
+    public var value: Value { self.box.value }
+
+    private final class Box: @unchecked Sendable {
+        private let lock = NSLock()
+        private let keyPath: KeyPath<GlobalDependencyKey, Value>
+        private var cached: Value?
+
+        init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
+            self.keyPath = keyPath
+        }
+
+        var value: Value {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            if let cached = self.cached {
+                return cached
+            }
+            let resolved = GlobalDependencyKey()[keyPath: self.keyPath]
+            self.cached = resolved
+            return resolved
+        }
+    }
+}
+
+extension DependencyStorage: Sendable where Value: Sendable {}
+
 @MainActor
 @propertyWrapper
 public struct ViewDependency<Value>: DynamicProperty {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>
     @State private var value: Value
-    
+
     public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
         self.keyPath = keyPath
         self.value = GlobalDependencyKey()[keyPath: keyPath]
     }
-    
+
     public var wrappedValue: Value { self.value }
 }
 
@@ -39,12 +79,12 @@ public struct ViewDependency<Value>: DynamicProperty {
 public struct LazyViewDependency<Value>: DynamicProperty {
     private let keyPath: KeyPath<GlobalDependencyKey, Value>
     @State private var value: Value?
-    
+
     public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
         self.keyPath = keyPath
         self.value = nil
     }
-    
+
     public var wrappedValue: Value {
         get {
             if let value {
@@ -56,39 +96,3 @@ public struct LazyViewDependency<Value>: DynamicProperty {
         }
     }
 }
-
-@propertyWrapper
-public struct Dependency<Value>: @unchecked Sendable {
-    private let keyPath: KeyPath<GlobalDependencyKey, Value>
-    private var value: Value
-    
-    public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
-        self.keyPath = keyPath
-        self.value = GlobalDependencyKey()[keyPath: keyPath]
-    }
-    
-    public var wrappedValue: Value { self.value }
-}
-
-@propertyWrapper
-public struct LazyDependency<Value>: @unchecked Sendable {
-    private let keyPath: KeyPath<GlobalDependencyKey, Value>
-    private var value: Value?
-    
-    public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
-        self.keyPath = keyPath
-        self.value = nil
-    }
-    
-    public var wrappedValue: Value {
-        mutating get {
-            if let value {
-                return value
-            }
-            let newValue = GlobalDependencyKey()[keyPath: keyPath]
-            self.value = newValue
-            return newValue
-        }
-    }
-}
-

@@ -23,7 +23,7 @@ final class AsyncAwaitReactable: Reactable, PathState, @unchecked Sendable {
         @ViewState(animation: .default) var count: Int = 0
     }
     
-    @Dependency(\.service) var service
+    @Dependency(\.service) var service: ServiceProtocol
     let initialState: State = State()
     var cancelTask: PassthroughSubject<Void, Never> = .init()
 

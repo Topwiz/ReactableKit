@@ -446,7 +446,15 @@ struct Service: ServiceProtocol {
     }
 }
 
-// MainActor를 따라야한다면 `MainActorDependencyInjectable`를 사용하세요.
+// 의존성 자체가 @MainActor 격리 타입이면 컨포먼스에 격리를 선언하세요.
+// 프로토콜은 그대로이고 격리만 컨포먼스가 가집니다:
+//
+//     extension Service: @MainActor DependencyInjectable {
+//         static var real: ServiceProtocol { Service.shared }
+//     }
+//     extension GlobalDependencyKey {
+//         @MainActor var service: ServiceProtocol { self[Service.self] }
+//     }
 
 extension Service: DependencyInjectable {
     static var real: ServiceProtocol { Service() }
@@ -461,12 +469,18 @@ extension GlobalDependencyKey {
 }
 
 // usage
-@Dependency(\.service) var service
+@Dependency(\.service) var service: ServiceProtocol
 ```
 
-#### 2. Factory
+> **스레드 안전성 참고.** `@Dependency`는 최초 접근 시 지연 해석하고 결과를 락 뒤에 캐시하므로
+> `actor`, `Sendable` 클래스, 일반 struct 어디에서든 보유할 수 있습니다.
+> 다만 값을 어떻게 쓸 수 있는지는 값 자신의 격리가 계속 지배합니다 — `@MainActor` 격리 의존성은
+> 여전히 메인 액터 전용입니다. 그리고 `Sendable` 타입이 `@Dependency`로 non-Sendable 의존성을
+> 보유해도 컴파일러가 **잡지 못합니다**(매크로 생성 저장소가 검사를 비켜갑니다). 격리 경계를 넘는
+> 의존성은 직접 `Sendable`로 만들어 주세요.
 
-> @MainActor가 필요한 Factory는 `ViewFactory`를 사용합니다.
+
+#### 2. Factory
 
 ```swift
 final class TestObject: Factory {

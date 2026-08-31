@@ -8,7 +8,6 @@
 import Foundation
 import ReactableKit
 import Combine
-import DependencyInjectableKit
 
 final class CounterReactable: Reactable, PathState, @unchecked Sendable {
     

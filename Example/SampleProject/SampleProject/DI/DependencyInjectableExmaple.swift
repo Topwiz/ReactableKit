@@ -123,16 +123,44 @@ extension GlobalDependencyKey {
     }
 }
 
-// MARK: - Usage
+// MARK: - MainActor Isolated Dependency
 
-struct DependencyExample {
-    @Dependency(\.service) var service
-    @Dependency(\.testObjectFactory) var testObjectFactory
-    @Dependency(\.factoryTestFactory) var factoryTestFactory
-    
-    init() {
-        self.service.test()
-        let testObject = self.testObjectFactory.create(payload: .init(text: "111"))
-        let factoryTest = self.factoryTestFactory.create(payload: .init())
+@MainActor
+final class SessionStore {
+    static let shared = SessionStore()
+
+    private(set) var userName = "guest"
+
+    func signIn(as name: String) {
+        self.userName = name
+    }
+}
+
+extension SessionStore: @MainActor DependencyInjectable {
+    static var real: SessionStore { .shared }
+}
+
+extension GlobalDependencyKey {
+    @MainActor
+    var sessionStore: SessionStore {
+        self[SessionStore.self]
+    }
+}
+
+// MARK: - Background Holders
+
+final class BackgroundRepository: Sendable {
+    @Dependency(\.service) var service: ServiceProtocol
+
+    func load() -> String {
+        "BackgroundRepository (Sendable class) -> \(self.service.test())"
+    }
+}
+
+actor BackgroundActorRepository {
+    @Dependency(\.service) var service: ServiceProtocol
+
+    func load() -> String {
+        "BackgroundActorRepository (actor) -> \(self.service.test())"
     }
 }

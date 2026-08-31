@@ -23,6 +23,10 @@
 		A1CED20C2D5E3C60006A2F9E /* ForEachReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */; };
 		A1CED20E2D5E3C72006A2F9E /* ForEachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */; };
 		A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */; };
+		A1DE00022E7A0002005824A1 /* DependencyReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1DE00012E7A0001005824A1 /* DependencyReactable.swift */; };
+		A1DE00032E7A0003005824A1 /* DependencyReactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1DE00012E7A0001005824A1 /* DependencyReactable.swift */; };
+		A1DE00052E7A0005005824A1 /* DependencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1DE00042E7A0004005824A1 /* DependencyView.swift */; };
+		A1DE00062E7A0006005824A1 /* DependencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1DE00042E7A0004005824A1 /* DependencyView.swift */; };
 		A1F2B80D2D433508009391A2 /* NavigationStackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80A2D433508009391A2 /* NavigationStackView.swift */; };
 		A1F2B80E2D433508009391A2 /* ExmapleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B80B2D433508009391A2 /* ExmapleApp.swift */; };
 		A1F2B80F2D433508009391A2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1F2B8072D433508009391A2 /* Preview Assets.xcassets */; };
@@ -67,6 +71,8 @@
 		A1CED20B2D5E3C60006A2F9E /* ForEachReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachReactable.swift; sourceTree = "<group>"; };
 		A1CED20D2D5E3C72006A2F9E /* ForEachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForEachView.swift; sourceTree = "<group>"; };
 		A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyInjectableExmaple.swift; sourceTree = "<group>"; };
+		A1DE00012E7A0001005824A1 /* DependencyReactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyReactable.swift; sourceTree = "<group>"; };
+		A1DE00042E7A0004005824A1 /* DependencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyView.swift; sourceTree = "<group>"; };
 		A1F2B8072D433508009391A2 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A1F2B8092D433508009391A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1F2B80A2D433508009391A2 /* NavigationStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationStackView.swift; sourceTree = "<group>"; };
@@ -206,6 +212,8 @@
 			isa = PBXGroup;
 			children = (
 				A1EF005C2D6FF056009BAED9 /* DependencyInjectableExmaple.swift */,
+				A1DE00012E7A0001005824A1 /* DependencyReactable.swift */,
+				A1DE00042E7A0004005824A1 /* DependencyView.swift */,
 			);
 			path = DI;
 			sourceTree = "<group>";
@@ -428,6 +436,8 @@
 				A1F2B82B2D499D70009391A2 /* SharedStateChildReactable.swift in Sources */,
 				A1F2B8192D433E5D009391A2 /* NavigationStackReactable.swift in Sources */,
 				A1EF005D2D6FF056009BAED9 /* DependencyInjectableExmaple.swift in Sources */,
+				A1DE00022E7A0002005824A1 /* DependencyReactable.swift in Sources */,
+				A1DE00052E7A0005005824A1 /* DependencyView.swift in Sources */,
 				A18CED2B2D8D7D4000AF84BD /* TodoAddReactable.swift in Sources */,
 				A1F2B8122D43351D009391A2 /* CounterView.swift in Sources */,
 				A18CED0C2D8D035E00AF84BD /* AsyncAwaitReactable.swift in Sources */,
@@ -441,6 +451,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A13EC6C62D797537005824A1 /* DependencyInjectableExmaple.swift in Sources */,
+				A1DE00032E7A0003005824A1 /* DependencyReactable.swift in Sources */,
+				A1DE00062E7A0006005824A1 /* DependencyView.swift in Sources */,
 				A1FE06C42D67914D00E010AA /* CounterReactable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

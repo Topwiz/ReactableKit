@@ -487,7 +487,15 @@ struct Service: ServiceProtocol {
     }
 }
 
-// Use `MainActorDependencyInjectable` if you need to follow MainActor
+// If the dependency itself is @MainActor-isolated, declare the conformance as isolated.
+// The protocol stays the same — only the conformance carries the isolation:
+//
+//     extension Service: @MainActor DependencyInjectable {
+//         static var real: ServiceProtocol { Service.shared }
+//     }
+//     extension GlobalDependencyKey {
+//         @MainActor var service: ServiceProtocol { self[Service.self] }
+//     }
 
 extension Service: DependencyInjectable {
     static var real: ServiceProtocol { Service() }
@@ -502,12 +510,18 @@ extension GlobalDependencyKey {
 }
 
 // usage
-@Dependency(\.service) var service
+@Dependency(\.service) var service: ServiceProtocol
 ```
 
-#### 2. Factory
+> **Thread-safety note.** `@Dependency` resolves lazily on first access and caches the result
+> behind a lock, so it is safe to hold in an `actor`, a `Sendable` class, or a plain struct.
+> The value's own isolation still governs how you may use it: a `@MainActor`-isolated dependency
+> stays main-actor-only. Note that the compiler does **not** flag a `Sendable` type holding a
+> non-Sendable dependency through `@Dependency` — macro-generated storage escapes that check —
+> so make the dependency `Sendable` yourself when it crosses isolation boundaries.
 
-> Use `ViewFactory` for factories that require @MainActor.
+
+#### 2. Factory
 
 ```swift
 final class TestObject: Factory {
