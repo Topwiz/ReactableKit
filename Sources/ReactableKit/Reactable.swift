@@ -36,11 +36,23 @@ public protocol Reactable: AnyObject, IdentityHashable {
     func mutate(action: Action) -> AnyPublisher<Mutation, Never>
     func reduce(state: inout State, mutation: Mutation)
     func transformAction() -> AnyPublisher<Action, Never>
+
+    #if DEBUG
+    /// Instrumentation configuration for this Reactable's cycle: `os_signpost` intervals for
+    /// queue latency, mutate, effect, and reduce, plus a warning whenever a stage exceeds its
+    /// threshold.
+    ///
+    /// Returns `nil` by default, which means this Reactable is not measured. Override it to opt
+    /// in — global switches (`ReactableInstrument.enabledByDefault`, `filter`, or the
+    /// `REACTABLE_INSTRUMENT` environment variable) can still enable it without an override.
+    /// Removed entirely from release builds.
+    var instrumentation: ReactableInstrument.Options? { get }
+    #endif
 }
 
 public extension Reactable {
     
-    private var stream: Stream<Action, State> {
+    private var stream: Stream<IdentityAction, State> {
         WeakCache.stream.forceCastedValue(forKey: self, default: self.createStream())
     }
     
@@ -65,6 +77,10 @@ public extension Reactable {
     func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
         Empty<Mutation, Never>().eraseToAnyPublisher()
     }
+    
+    #if DEBUG
+    var instrumentation: ReactableInstrument.Options? { nil }
+    #endif
     
     func reduce(state: inout State, mutation: Mutation) { }
     
@@ -93,8 +109,11 @@ public extension Reactable {
     
     func action(_ action: Action) {
         let stream = self.stream
+        // Stamped here, before the hop, so the measured queue latency includes the time this
+        // action spends waiting behind whatever else is already on the main queue.
+        let identity = IdentityAction.stamped(action)
         DispatchQueue.main.async {
-            stream.action.send(action)
+            stream.action.send(identity)
         }
     }
     
@@ -110,7 +129,7 @@ public extension Reactable {
     internal func mainActorAction(_ action: Action) async -> State {
         return await withCheckedContinuation { [weak self] continuation in
             guard let self else { return }
-            let identity = IdentityAction(action: action, continuation: continuation)
+            let identity = IdentityAction.stamped(action, continuation: continuation)
             self.asyncAction(identity)
         }
     }
@@ -119,24 +138,30 @@ public extension Reactable {
     func asyncAction(_ action: Action) async -> State {
         return await withCheckedContinuation { [weak self] continuation in
             guard let self else { return }
-            let identity = IdentityAction(action: action, continuation: continuation)
+            let identity = IdentityAction.stamped(action, continuation: continuation)
             self.asyncAction(identity)
         }
     }
     
-    private func createStream() -> Stream<Action, State> {
-        let actionSubject = PassthroughSubject<Action, Never>()
+    private func createStream() -> Stream<IdentityAction, State> {
+        let actionSubject = PassthroughSubject<IdentityAction, Never>()
         let stateSubject = ReplaySubject<State, Never>(bufferSize: 1)
 
         let stream = Stream(action: actionSubject, state: stateSubject)
         WeakCache.stream.setValue(stream, forKey: self)
 
+        #if DEBUG
+        // Resolved once per stream rather than once per action: building this string on every
+        // cycle would be exactly the kind of hidden cost the instrument exists to catch.
+        let instrumentName = String(describing: type(of: self))
+        #endif
+
         let transformedActionStream = self.transformAction()
             .eraseToAnyPublisher()
 
         let mergedActionStream = Publishers.Merge3(
-            actionSubject.map { Identity(action: $0) }.eraseToAnyPublisher(),
-            transformedActionStream.map { Identity(action: $0) }.eraseToAnyPublisher(),
+            actionSubject.eraseToAnyPublisher(),
+            transformedActionStream.map { IdentityAction.stamped($0) }.eraseToAnyPublisher(),
             self.asyncAction.eraseToAnyPublisher()
         )
             .receive(on: DispatchQueue.main)
@@ -144,7 +169,54 @@ public extension Reactable {
         let mutationStream = mergedActionStream
             .flatMap { [weak self] identity -> AnyPublisher<(IdentityAction, Mutation), Never> in
                 guard let self = self else { return .empty() }
-                return self.mutate(action: identity.action)
+
+                let mutationPublisher: AnyPublisher<Mutation, Never>
+                #if DEBUG
+                var identity = identity
+                // `isStub` is read per action rather than once per stream: a Reactable can be
+                // wrapped in a `Stub` after its stream already exists, and `Stub` drives
+                // `mutate`/`reduce` directly *and* through the stream, so measuring it would count
+                // every sample twice. Checked after `resolveOptions` so a Reactable nobody asked to
+                // measure never pays for the lookup.
+                if let options = ReactableInstrument.resolveOptions(
+                       name: instrumentName,
+                       instrumentation: self.instrumentation
+                   ),
+                   !self.isStub {
+                    // One lazily-derived case name shared by all three measurements below, so the
+                    // reflection runs at most once per action — and not at all if nothing needs it.
+                    // Carried on the identity so the reduce stage reuses this resolution instead
+                    // of taking the process-wide instrument lock again for every mutation.
+                    identity.instrumentOptions = options
+                    let actionName = ReactableInstrument.LazyName.caseName(of: identity.action)
+                    if let enqueuedAt = identity.enqueuedAt {
+                        ReactableInstrument.recordQueueLatency(
+                            options: options,
+                            reactable: instrumentName,
+                            action: actionName,
+                            enqueuedAt: enqueuedAt
+                        )
+                    }
+                    mutationPublisher = ReactableInstrument.measureEffect(
+                        ReactableInstrument.measureMutate(
+                            options: options,
+                            reactable: instrumentName,
+                            action: actionName
+                        ) {
+                            self.mutate(action: identity.action)
+                        },
+                        options: options,
+                        reactable: instrumentName,
+                        action: actionName
+                    )
+                } else {
+                    mutationPublisher = self.mutate(action: identity.action)
+                }
+                #else
+                mutationPublisher = self.mutate(action: identity.action)
+                #endif
+
+                return mutationPublisher
                     .map { (identity, $0) }
                     .handleEvents(receiveCompletion: { [weak self] completion in
                         guard let self else { return }
@@ -164,7 +236,21 @@ public extension Reactable {
                 let (_, prevState) = acc
                 let (action, mutation) = tuple
                 var newState = prevState
+                #if DEBUG
+                if let options = action.instrumentOptions {
+                    ReactableInstrument.measureReduce(
+                        options: options,
+                        reactable: instrumentName,
+                        mutation: .caseName(of: mutation)
+                    ) {
+                        self.reduce(state: &newState, mutation: mutation)
+                    }
+                } else {
+                    self.reduce(state: &newState, mutation: mutation)
+                }
+                #else
                 self.reduce(state: &newState, mutation: mutation)
+                #endif
                 return (action, newState)
             }
             .handleEvents(receiveOutput: { [weak self] (action, newState) in
@@ -199,4 +285,32 @@ struct Stream<A: Sendable, S: Sendable>: Sendable {
 struct Identity<R: Reactable, A: Sendable>: Sendable {
     var action: A
     var continuation: CheckedContinuation<R.State, Never>?
+    #if DEBUG
+    /// Monotonic timestamp taken when the action was handed to the main queue, used to measure
+    /// how long it waited before `mutate` ran. Release builds do not carry this.
+    var enqueuedAt: UInt64?
+    /// Instrument options resolved once in the mutate stage and reused by reduce, so the
+    /// process-wide instrument lock is taken once per action rather than once per mutation.
+    var instrumentOptions: ReactableInstrument.Options?
+    #endif
+
+    /// Builds an identity, stamping the enqueue time in DEBUG builds.
+    static func stamped(_ action: A) -> Identity<R, A> {
+        #if DEBUG
+        Identity(action: action, enqueuedAt: ReactableInstrument.timestamp())
+        #else
+        Identity(action: action)
+        #endif
+    }
+
+    static func stamped(
+        _ action: A,
+        continuation: CheckedContinuation<R.State, Never>
+    ) -> Identity<R, A> {
+        #if DEBUG
+        Identity(action: action, continuation: continuation, enqueuedAt: ReactableInstrument.timestamp())
+        #else
+        Identity(action: action, continuation: continuation)
+        #endif
+    }
 }

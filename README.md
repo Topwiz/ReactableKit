@@ -49,6 +49,9 @@ dependencies: [
 - [`@SharedViewState`](#sharedviewstate)
 - [`@Emit` State Tracking](#emit-state-tracking)
 
+### 🔬 Debugging
+- [`ReactableInstrument` (Cycle Performance)](#-debugging--reactableinstrument)
+
 ### 🔧 Features
 - [`ObservableEvent` (Parent-Child Communication)](#observableevent-parent-child-communication)
 - [`ReactableView` Protocol](#reactableview-protocol)
@@ -556,6 +559,111 @@ extension MyFactory: DependencyInjectable {
     }
 }
 ```
+
+## 🔬 Debugging — `ReactableInstrument`
+
+`ReactableInstrument` measures every stage of the Reactable cycle and warns when one of them takes
+too long. It exists only in **DEBUG** builds — the file and every call site inside `Reactable` are
+removed by `#if DEBUG`, so a release build carries none of it.
+
+```
+action(_:) ─▶ [Queue] ─▶ [Mutate] ─▶ [Effect] ─▶ [Reduce] ─▶ state
+```
+
+| Stage | What it measures |
+|---|---|
+| `Queue` | How long the action waited on the main queue before `mutate` ran |
+| `Mutate` | Synchronous cost of building the mutation publisher |
+| `Effect` | Lifetime of that publisher, from subscription to completion |
+| `Reduce` | Synchronous cost of applying a mutation to the state |
+
+`Queue` is the one to watch for a stalled UI: every individual stage can look healthy while actions
+pile up behind a blocked main queue, and only queue latency shows that.
+
+### Turning it on
+
+Instrumentation is opt-in. Override `instrumentation` on the Reactable you care about:
+
+```swift
+#if DEBUG
+extension MyHighFrequencyReactable {
+    var instrumentation: ReactableInstrument.Options? { .default }
+}
+#endif
+```
+
+`Options` takes a `label` to tell several instances of the same type apart, and a
+`warningThreshold` to override the global one for this Reactable:
+
+```swift
+var instrumentation: ReactableInstrument.Options? {
+    .init(label: "carplay", warningThreshold: 0.016)   // one frame at 60fps
+}
+```
+
+To measure everything without touching any code, set `REACTABLE_INSTRUMENT` to `1` in the scheme's
+environment variables, or flip it at runtime from a debug menu:
+
+```swift
+ReactableInstrument.enabledByDefault = true
+ReactableInstrument.filter = { $0.contains("Guide") }   // by Reactable type name
+```
+
+Precedence: a Reactable's own `instrumentation` always wins. Otherwise, when a `filter` is set it
+decides on its own — a non-matching type name stays un-instrumented even with `enabledByDefault` or
+`REACTABLE_INSTRUMENT` on, so a filter narrows a global switch rather than widening it.
+
+### Warnings
+
+Anything at or above the threshold (50 ms by default) is logged:
+
+```
+Slow reduce: playground.MyReactable updateLocation took 200.3ms (threshold 50.0ms)
+```
+
+Warnings are rate limited to one per reactable/stage/case per `warningInterval` (1 s by default), so
+a high-frequency stream cannot flood the log. Statistics still record every sample.
+
+`Effect` is measured upstream of `reduce`, and Combine delivers a value synchronously through
+`reduce` before the completion event arrives — so a slow `reduce` inflates the `Effect` sample as
+well. When `Slow effect` and `Slow reduce` name the same action, the reduce is the cause; the effect
+is not doing async work.
+
+### Aggregated report
+
+```swift
+print(ReactableInstrument.report())
+```
+
+```
+ReactableInstrument report (threshold 50.0ms)
+REACTABLE    STAGE   CASE                COUNT        P50        P90        MAX
+MyReactable  queue   updateLocation        412      0.8ms     12.0ms    137.4ms
+MyReactable  reduce  setLocation           412      0.1ms      0.2ms      4.1ms
+```
+
+### Observing every measurement
+
+```swift
+ReactableInstrument.onEvent = { event in
+    // event.stage, event.reactable, event.name, event.duration
+}
+```
+
+Do not dispatch an action into an instrumented Reactable from this hook — the resulting cycle would
+emit more events, forever.
+
+### Instruments
+
+Edit Scheme ▸ Profile ▸ Build Configuration = **Debug**, then ⌘I, add the **os_signpost**
+instrument, and look for subsystem `ReactableInstrument.subsystem` (the app's bundle identifier by
+default) / category `Reactable`.
+
+### Try it
+
+The sample app has a playground screen — `📈 ReactableInstrument Playground` in
+`Example/SampleProject` — with sliders for the threshold and the per-action cost, buttons that make
+each stage slow on purpose, and a burst/flood stress test that reproduces a main-queue backlog.
 
 ## 🏗️ Roadmap
 
