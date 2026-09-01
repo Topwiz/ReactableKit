@@ -10,11 +10,12 @@ Assumed baseline: Swift 6 language mode, iOS 16+.
 
 ## 0. The three facts everything else follows from
 
-1. **`Reactable` is not actor-isolated, but every operation runs on the main
-   thread.** State reads and writes hop through `DispatchQueue.main`, and `.run`
-   bodies execute inside `Task { @MainActor in }`. The contract is enforced at
-   runtime, not by the type system, so you do not hop to the main actor to talk
-   to a Reactable — and you do not annotate one either.
+1. **`Reactable` is not actor-isolated; the pipeline runs on the main thread.**
+   `mutate` and `reduce` are reached through `.receive(on: DispatchQueue.main)`,
+   and state reads and writes hop through `DispatchQueue.main`. The contract is
+   enforced at runtime, not by the type system, so you do not hop to the main
+   actor to talk to a Reactable — and you do not annotate one either. The one
+   part that is *not* on main is the `.run` body; see §2.
 2. **State flows one way.** `action` → `mutate` → `Mutation` → `reduce` → `State`.
    Nothing else may write state.
 3. **`@Dependency` is an attached macro and a property wrapper sharing one
@@ -102,7 +103,7 @@ final class CounterReactable: Reactable { }
 
 The compiler rejects it: *"conformance of 'CounterReactable' to protocol
 'Reactable' crosses into main actor-isolated code and can cause data races"*.
-Main-thread execution is already guaranteed at runtime; leave the class
+The pipeline already runs on the main thread at runtime; leave the class
 nonisolated. Same for members in a `Reactable` extension.
 
 ### ❌ Never: mutate state outside `reduce`
@@ -150,9 +151,27 @@ func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
 }
 ```
 
-`.run` already runs its body on the main actor (`Task { @MainActor in }` inside),
-so you can touch `self`, `currentState` and child Reactables directly. It emits
-zero or more values through `send` and cancels with the subscription.
+`.run` emits zero or more values through `send` and cancels with the
+subscription. `send` is safe to call from any thread — the publisher delivers on
+`DispatchQueue.main` before the pipeline reduces.
+
+### ⚠️ Know that the `.run` body is *not* on the main actor
+
+`run(operation:catch:)` takes a plain `@Sendable async` closure and awaits it
+inside `Task { @MainActor in }`, which is not enough: a nonisolated async
+function does not inherit its caller's actor (SE-0338), so the body runs on the
+cooperative pool. Measured, not inferred.
+
+That is what you want for the I/O itself. But anything that must be on the main
+thread — `currentState`, calling a child Reactable, UI — needs the isolation
+spelled out on the closure:
+
+```swift
+return .run { @MainActor [currentState = self.currentState] send in
+    let items = try await self.repository.fetch()
+    send(.setItems(currentState.items + items))
+}
+```
 
 ### ❌ Never: wrap Reactable calls in `Task { }`
 
@@ -170,9 +189,10 @@ func reduce(state: inout State, mutation: Mutation) {
 }
 ```
 
-Everything in a Reactable is already on the main actor. A `Task` here buys you
-nothing, reorders the work, and breaks the ordering guarantees the pipeline gives
-you.
+`mutate` and `reduce` already run on the main thread — the action stream is
+`.receive(on: DispatchQueue.main)` before it reaches either. A `Task` here buys
+you nothing, reorders the work, and breaks the ordering guarantees the pipeline
+gives you. (The `.run` body is the one part that is *not* on main; see §2.)
 
 ### ❌ Never: use a detached `Task` to escape isolation
 
@@ -296,7 +316,8 @@ func reduce(state: inout State, mutation: Mutation) {
 }
 ```
 
-No `await`, no `Task` — parent and child share the main actor.
+No `await`, no `Task` — `reduce` is already on the main thread, and so is the
+child's action.
 
 ### ✅ Do: observe a child with `child(_:).observe()`
 
@@ -405,13 +426,13 @@ func reduce(state: inout State, mutation: Mutation) {
 }
 ```
 
-`reduce` runs on the main actor, so pipeline writes are already serialised. There
-is no race to guard against here.
+`reduce` runs on the main thread, so pipeline writes are already serialised.
+There is no race to guard against here.
 
 `withLock` earns its keep when the **same key** is written from two isolation
 domains. `@Shared` values are shared by key across the whole process, so a
-Reactable on the main actor and an actor elsewhere can each be internally
-serialised and still interleave with each other:
+Reactable's `reduce` on the main thread and an actor elsewhere can each be
+internally serialised and still interleave with each other:
 
 ```swift
 actor TodoSyncEngine {
