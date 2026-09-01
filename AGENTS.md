@@ -10,9 +10,11 @@ Assumed baseline: Swift 6 language mode, iOS 16+.
 
 ## 0. The three facts everything else follows from
 
-1. **`Reactable` is `@MainActor`-isolated.** Every conforming class, and every
-   member declared in a `Reactable` extension, is main-actor isolated. You do not
-   annotate your Reactables, and you do not hop to the main actor to talk to them.
+1. **`Reactable` is not actor-isolated, but every operation runs on the main
+   thread.** State reads and writes hop through `DispatchQueue.main`, and `.run`
+   bodies execute inside `Task { @MainActor in }`. The contract is enforced at
+   runtime, not by the type system, so you do not hop to the main actor to talk
+   to a Reactable — and you do not annotate one either.
 2. **State flows one way.** `action` → `mutate` → `Mutation` → `reduce` → `State`.
    Nothing else may write state.
 3. **`@Dependency` is a macro, not a property wrapper.** It resolves lazily on
@@ -64,27 +66,42 @@ final class CounterReactable: Reactable {
 and structs of `Sendable` properties get it for free — you rarely write the
 conformance yourself.
 
-### ❌ Never: add `@unchecked Sendable`
+### ⚠️ Know when `@unchecked Sendable` is actually required
+
+`Reactable` itself does not require `Sendable`, so a plain Reactable needs no
+annotation. Two things pull `Sendable` in:
+
+- adopting `PathState` for navigation
+- a `State` that holds a child Reactable
+
+Once the class must be `Sendable`, a mutable stored property — `var initialState`
+being the usual one — makes the checked conformance fail with *"stored property
+'initialState' of 'Sendable'-conforming class is mutable"*. `@unchecked Sendable`
+is the escape hatch there:
 
 ```swift
-// WRONG
-final class CounterReactable: Reactable, @unchecked Sendable { }
+final class CounterReactable: Reactable, PathState, @unchecked Sendable {
+    var initialState = State()
+}
 ```
 
-`@unchecked Sendable` disables the compiler's check rather than satisfying it. A
-`Reactable` is already `@MainActor`-isolated, which makes it *checkably* `Sendable`
-even with mutable stored properties. If you feel the urge to write `@unchecked`,
-something else is wrong — find that instead.
+Prefer `let initialState` when you can — then the checked conformance holds and
+the annotation is unnecessary. Reach for `@unchecked` only for this specific
+shape, never to silence an unrelated concurrency error.
 
 ### ❌ Never: add `@MainActor` to your Reactable
 
 ```swift
-// WRONG — redundant, and the noise hides the ones that are load-bearing
+// WRONG — the protocol is not isolated, so this makes the conformance cross
+// an isolation boundary
 @MainActor
 final class CounterReactable: Reactable { }
 ```
 
-The protocol carries the isolation. Same for members in a `Reactable` extension.
+The compiler rejects it: *"conformance of 'CounterReactable' to protocol
+'Reactable' crosses into main actor-isolated code and can cause data races"*.
+Main-thread execution is already guaranteed at runtime; leave the class
+nonisolated. Same for members in a `Reactable` extension.
 
 ### ❌ Never: mutate state outside `reduce`
 
@@ -430,8 +447,9 @@ NavigationLink(reactable: { DetailReactable() }) {
 }
 ```
 
-`PathState` requires `Sendable`, which a `Reactable` satisfies for free because it
-is `@MainActor`. This is why `@unchecked Sendable` is never needed here.
+`PathState` requires `Sendable`. A Reactable with a `let initialState` satisfies
+that with a checked conformance; one with `var initialState` needs
+`@unchecked Sendable` — see §1.
 
 ### ✅ Do: keep the path in State
 
@@ -604,10 +622,9 @@ Setting `reactable` cancels the previous subscriptions and calls `bind` again, s
 
 ## 9. Testing
 
-### ✅ Do: mark suites `@MainActor` and drive with `Stub`
+### ✅ Do: drive tests with `Stub`
 
 ```swift
-@MainActor
 struct CounterReactableTests {
     @Test
     func increments() async {
@@ -618,9 +635,10 @@ struct CounterReactableTests {
 }
 ```
 
-`Stub` is `@MainActor` because Reactables are. A nonisolated test suite cannot
-even construct one — if you see *"main actor-isolated initializer cannot be called
-from outside of the actor"*, add `@MainActor` to the suite.
+`Stub` is `@unchecked Sendable` and its initializer is nonisolated, so a plain
+test suite can construct one — no `@MainActor` on the suite. `Stub.setState(_:)`
+*is* main-actor isolated, so a suite that seeds state needs `@MainActor` (or an
+`await`).
 
 `Stub.action` awaits the whole pipeline, so no sleeping or polling is needed.
 `setState(_:)` seeds a starting state.
@@ -660,7 +678,6 @@ configurations before claiming a build is clean.
 | `@Dependency requires an explicit type annotation` | `@Dependency` without a type | Annotate: `var x: Service` |
 | `@Dependency cannot be applied to a property with an initial value` | `@Dependency(\.x) var x: T = T()` | Drop the initial value; the key path supplies it |
 | `property wrapper can only be applied to a 'var'` | `@ViewState` / `@Shared` / `@ViewDependency` on a `let` | Use `var` — this one is about wrappers, not the macro |
-| `main actor-isolated initializer cannot be called from outside of the actor` | Nonisolated test suite or type building a Reactable/Stub | Add `@MainActor` to the suite |
+| `conformance of '...' to protocol 'Reactable' crosses into main actor-isolated code` | `@MainActor` on a Reactable conformance | Drop it; the protocol is nonisolated |
 | `main actor-isolated default value in a nonisolated context` | Resolving a `@MainActor` conformance off-main | Resolve on the main actor, or drop the isolated conformance |
-| `stored property ... of 'Sendable'-conforming class is mutable` | A property wrapper in a `Sendable` class | Use `@Dependency` (macro), not a wrapper |
-| `@unchecked Sendable` feels necessary | Usually a missing isolation, not a real gap | Find the real cause; do not silence the check |
+| `stored property ... of 'Sendable'-conforming class is mutable` | A property wrapper in a `Sendable` class, or `var initialState` on a `PathState` Reactable | Use `@Dependency` (macro) instead of a wrapper; for `initialState`, use `let` or `@unchecked Sendable` |
