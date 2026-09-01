@@ -17,9 +17,11 @@ Assumed baseline: Swift 6 language mode, iOS 16+.
    to a Reactable — and you do not annotate one either.
 2. **State flows one way.** `action` → `mutate` → `Mutation` → `reduce` → `State`.
    Nothing else may write state.
-3. **`@Dependency` is a macro, not a property wrapper.** It resolves lazily on
-   first access and caches behind a lock, so it works in any type — a `Reactable`,
-   an `actor`, a `Sendable` class, a plain struct.
+3. **`@Dependency` is an attached macro and a property wrapper sharing one
+   name.** The macro takes member declarations, the wrapper takes local ones.
+   Both own a storage that resolves lazily behind its own lock, so the two
+   behave identically — it works in any type (a `Reactable`, an `actor`, a
+   `Sendable` class, a plain struct) and in any local scope.
 
 ---
 
@@ -506,15 +508,18 @@ once per process.
 @Dependency(\.service) var service: ServiceProtocol
 ```
 
-### ❌ Never: omit the type annotation
+### ❌ Never: omit the type annotation on a member
 
 ```swift
-// WRONG — will not compile
-@Dependency(\.service) var service
+struct Trip {
+    // WRONG — will not compile
+    @Dependency(\.service) var service
+}
 ```
 
-`@Dependency` is a macro. It cannot infer the type from the key path, so the
-annotation is required. This is the single most common migration error.
+A member declaration goes through the macro, which cannot infer the type from the
+key path. This is the single most common migration error. In a local scope the
+property wrapper is chosen instead and does infer it — see §7.
 
 ### ✅ Do: hold dependencies anywhere, including background types
 
@@ -529,6 +534,55 @@ actor SyncEngine {
 ```
 
 Resolution is lazy and lock-guarded, so this is safe from any thread.
+
+### ✅ Do: declare dependencies inside a local scope
+
+```swift
+private func configureAudio() async throws {
+    @Dependency(\.audioSessionManager) var manager: AudioSessionManagerProtocol
+    try await manager.activateSession()
+}
+```
+
+Works in every local position: function bodies, initializers, closures, and
+accessor bodies — implicit ones included.
+
+### ✅ Do: drop the type annotation in a local scope
+
+```swift
+struct Trip {
+    var carType: CarType {
+        @Dependency(\.configurationService) var service
+        return service.get().carType
+    }
+}
+```
+
+`@Dependency` is two things under one name: an attached macro, and a property
+wrapper. The compiler takes the macro wherever member storage is valid, and the
+wrapper everywhere else — including the body of an implicit getter, which the
+macro cannot tell apart from a member declaration.
+
+They behave the same. Both own a `DependencyStorage`: resolution is deferred to
+first access, guarded by that storage's own lock, and cached for the lifetime of
+the declaration. Two member instances resolve twice; two evaluations of a local
+declaration resolve twice; one declaration accessed repeatedly resolves once.
+
+The one difference you can see is the annotation: the macro cannot infer the type
+from the key path and requires it, while the wrapper infers it. Annotating is
+always correct; omitting it only works where the wrapper is chosen.
+
+### ❌ Never: use `@Dependency` as an `extension` or `enum` member
+
+```swift
+// WRONG — "extensions must not contain stored properties"
+extension Trip {
+    @Dependency(\.service) var service: ServiceProtocol
+}
+```
+
+The macro expands to a stored property and the wrapper needs one, so neither can
+live there. Declare it locally inside the member that uses it.
 
 ### ✅ Do: declare the conformance isolated when the dependency itself is main-actor bound
 
@@ -680,4 +734,4 @@ configurations before claiming a build is clean.
 | `property wrapper can only be applied to a 'var'` | `@ViewState` / `@Shared` / `@ViewDependency` on a `let` | Use `var` — this one is about wrappers, not the macro |
 | `conformance of '...' to protocol 'Reactable' crosses into main actor-isolated code` | `@MainActor` on a Reactable conformance | Drop it; the protocol is nonisolated |
 | `main actor-isolated default value in a nonisolated context` | Resolving a `@MainActor` conformance off-main | Resolve on the main actor, or drop the isolated conformance |
-| `stored property ... of 'Sendable'-conforming class is mutable` | A property wrapper in a `Sendable` class, or `var initialState` on a `PathState` Reactable | Use `@Dependency` (macro) instead of a wrapper; for `initialState`, use `let` or `@unchecked Sendable` |
+| `stored property ... of 'Sendable'-conforming class is mutable` | `@ViewState` / `@Shared` in a `Sendable` class, or `var initialState` on a `PathState` Reactable | For a dependency use `@Dependency`, whose member form is macro-generated storage; for `initialState`, use `let` or `@unchecked Sendable` |

@@ -513,7 +513,24 @@ extension GlobalDependencyKey {
 
 // usage
 @Dependency(\.service) var service: ServiceProtocol
+
+// usage in a local scope — the type annotation is optional here
+func configure() {
+    @Dependency(\.service) var service
+    service.fetch()
+}
 ```
+
+> **Local scope.** `@Dependency` is an attached macro and a property wrapper sharing one name.
+> The compiler takes the macro wherever member storage is valid and the wrapper everywhere
+> else — function bodies, initializers, closures, and accessor bodies, implicit ones included.
+> Both own a `DependencyStorage`, so they behave identically: lazy on first access, guarded by
+> that storage's own lock, cached for the lifetime of the declaration. The only visible
+> difference is that the macro requires the type annotation while the wrapper infers it from
+> the key path.
+>
+> Neither works as an `extension` or `enum` member — both need a stored property. Declare it
+> locally inside the member that uses it.
 
 > **Thread-safety note.** `@Dependency` resolves lazily on first access and caches the result
 > behind a lock, so it is safe to hold in an `actor`, a `Sendable` class, or a plain struct.

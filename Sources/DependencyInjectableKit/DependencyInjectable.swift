@@ -27,6 +27,29 @@ public macro Dependency<Value>(_ keyPath: KeyPath<GlobalDependencyKey, Value>) =
     type: "DependencyMacro"
 )
 
+/// The local-scope half of `@Dependency`.
+///
+/// The attached macro expands to an instance stored property, so it can only be
+/// applied where a type can hold one. A property wrapper of the same name covers
+/// every local declaration — function bodies, initializers, closures, and
+/// accessor bodies, implicit ones included. The compiler takes the macro where
+/// member storage is valid and this wrapper everywhere else.
+///
+/// Both own a `DependencyStorage`, so the two behave identically: resolution is
+/// deferred to first access, guarded by that storage's own lock, and cached for
+/// the lifetime of the declaration. The wrapper additionally infers `Value` from
+/// the key path, so the annotation the macro requires is optional here.
+@propertyWrapper
+public struct Dependency<Value> {
+    private let storage: DependencyStorage<Value>
+
+    public init(_ keyPath: KeyPath<GlobalDependencyKey, Value>) {
+        self.storage = DependencyStorage(keyPath)
+    }
+
+    public var wrappedValue: Value { self.storage.value }
+}
+
 public struct DependencyStorage<Value> {
     private let box: Box
 
