@@ -70,8 +70,8 @@ private func parse(
     }
     return DependencyDeclaration(
         identifier: identifier,
-        type: type,
-        keyPath: keyPath,
+        type: type.trimmed,
+        keyPath: keyPath.trimmed,
         modifiers: variable.modifiers
     )
 }

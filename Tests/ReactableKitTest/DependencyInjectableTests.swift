@@ -41,7 +41,7 @@ extension GlobalDependencyKey {
 }
 
 private final class SendableHolder: Sendable {
-    @Dependency(\.countingService) var service: CountingService
+    @Dependency(\.countingService) var service: CountingService // a trailing comment must not leak into the expansion
 }
 
 private actor ActorHolder {
