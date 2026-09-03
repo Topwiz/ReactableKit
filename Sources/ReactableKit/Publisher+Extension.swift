@@ -208,7 +208,7 @@ public extension AnyPublisher where Output: Sendable, Failure == Never {
     /// - Returns: A publisher wrapping the given asynchronous work.
     static func run(
         priority: TaskPriority? = nil,
-        operation: @Sendable @escaping (_ send: Send<Output>) async throws -> Void,
+        operation: @MainActor @Sendable @escaping (_ send: Send<Output>) async throws -> Void,
         catch handler: (@Sendable (_ error: any Error, _ send: Send<Output>) async -> Void)? = nil
     ) -> AnyPublisher<Output, Never> {
         Deferred {

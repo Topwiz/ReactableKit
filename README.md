@@ -51,6 +51,8 @@ dependencies: [
 
 ### 🔬 Debugging
 - [`ReactableInstrument` (Cycle Performance)](#-debugging--reactableinstrument)
+- [Target Lifecycle Events](#-target-lifecycle-events)
+- [Instrumentation Cost](#-instrumentation-cost)
 
 ### 🔧 Features
 - [`ObservableEvent` (Parent-Child Communication)](#observableevent-parent-child-communication)
@@ -563,8 +565,8 @@ extension MyFactory: DependencyInjectable {
 ## 🔬 Debugging — `ReactableInstrument`
 
 `ReactableInstrument` measures every stage of the Reactable cycle and warns when one of them takes
-too long. It exists only in **DEBUG** builds — the file and every call site inside `Reactable` are
-removed by `#if DEBUG`, so a release build carries none of it.
+too long in **DEBUG** builds. It can also emit selected stage lifecycle events in all build
+configurations through a target callback.
 
 ```
 action(_:) ─▶ [Queue] ─▶ [Mutate] ─▶ [Effect] ─▶ [Reduce] ─▶ state
@@ -585,18 +587,16 @@ pile up behind a blocked main queue, and only queue latency shows that.
 Instrumentation is opt-in. Override `instrumentation` on the Reactable you care about:
 
 ```swift
-#if DEBUG
 extension MyHighFrequencyReactable {
-    var instrumentation: ReactableInstrument.Options? { .default }
+    var instrumentation: ReactableInstrument.Options<Action>? { .default }
 }
-#endif
 ```
 
 `Options` takes a `label` to tell several instances of the same type apart, and a
 `warningThreshold` to override the global one for this Reactable:
 
 ```swift
-var instrumentation: ReactableInstrument.Options? {
+var instrumentation: ReactableInstrument.Options<Action>? {
     .init(label: "carplay", warningThreshold: 0.016)   // one frame at 60fps
 }
 ```
@@ -664,6 +664,71 @@ default) / category `Reactable`.
 The sample app has a playground screen — `📈 ReactableInstrument Playground` in
 `Example/SampleProject` — with sliders for the threshold and the per-action cost, buttons that make
 each stage slow on purpose, and a burst/flood stress test that reproduces a main-queue backlog.
+
+## 📊 Target lifecycle events
+
+`ReactableInstrument.Target` observes selected stages for matching actions. Targets are generic and
+can be consumed by any release-safe metrics system through `onTargetEvent`.
+
+```swift
+var instrumentation: ReactableInstrument.Options<Action>? {
+    .init(targets: [
+        .init(
+            .init(rawValue: "guide-helper.update-location"),
+            observing: [.effect],
+            emittingIn: .all
+        ) { (action: Action) in
+            guard case .locationUpdated = action else { return false }
+            return true
+        }
+    ])
+}
+
+ReactableInstrument.onTargetEvent = { event in
+    // Dispatch blocking work to a consumer-owned queue.
+    print(event)
+}
+```
+
+`emittingIn` accepts `.debugOnly`, `.releaseOnly`, or `.all`. `mutate` measures the synchronous
+`mutate(action:)` call, `reduce` measures each synchronous `reduce(state:mutation:)` call, and
+`effect` measures the returned publisher from subscription to completion. `effect` includes
+synchronous reductions delivered before publisher completion and is suitable for one cycle-level
+metric. Selected stages for one action share a cycle ID; a publisher cancellation produces
+`cancelled` instead of `finished`.
+
+The default target list and target callback are both empty. When no target callback is installed,
+the target path returns before target allocation or timestamping. Target callbacks run on the
+stream's delivery thread and must return promptly.
+
+## ⏱️ Instrumentation cost
+
+Instrumentation is not free, and **DEBUG costs far more than release**. Measured by driving
+1,000,000 actions through a Reactable whose `mutate` and `reduce` do almost nothing, on an iOS
+simulator — the worst case, where nothing hides the overhead behind real work:
+
+| | DEBUG | Release |
+|---|---|---|
+| no instrumentation | 5.9 µs/action | 4.5 µs/action |
+| `instrumentation` set, no targets | 18.4 µs (×3.11) | 4.5 µs (×1.00) |
+| targets declared, no handler installed | 18.8 µs (×3.18) | 4.5 µs (×0.99) |
+| targets on all three stages, handler installed | 24.0 µs (×4.06) | 7.6 µs (×1.68) |
+
+Two things make DEBUG worse. It runs the signpost, statistics and warning code that a release build
+compiles out entirely, and that code is built `-Onone`: the *same* target path costs +3.1 µs in
+release and +5.6 µs in DEBUG.
+
+What follows from the numbers:
+
+- **Leaving targets declared is safe.** With no targets, or with targets but no `onTargetEvent`
+  installed, the cost is not measurable — the path returns before any allocation or timestamp.
+- **DEBUG instrumentation distorts what it measures.** Roughly 3× on a trivial cycle. Turning it on
+  for a high-frequency Reactable changes the very timings you are reading, so opt in per Reactable
+  rather than reaching for `enabledByDefault`.
+- `ReactableInstrument.statisticsEnabled = false` removes about 12% of the DEBUG overhead when the
+  aggregated report is not needed.
+- A `mutate`/`reduce` that does real work shrinks every ratio above, because the fixed per-stage cost
+  is then a smaller share of the cycle.
 
 ## 🏗️ Roadmap
 
