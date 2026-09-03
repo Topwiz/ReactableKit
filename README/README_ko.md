@@ -523,8 +523,8 @@ extension MyFactory: DependencyInjectable {
 ## 🔬 디버깅 — `ReactableInstrument`
 
 `ReactableInstrument`는 Reactable 사이클의 각 단계를 계측하고, 임계를 넘는 단계를 경고합니다.
-**DEBUG 빌드에서만** 존재하며, 계측 파일과 `Reactable` 내부 호출부 전체가 `#if DEBUG`로 제거되므로
-릴리즈 빌드에는 아무것도 남지 않습니다.
+DEBUG 빌드에서는 `os_signpost`와 경고 로그를 기록하고, 모든 빌드에서 선택한 단계의 생명주기 이벤트를
+대상 콜백으로 전달할 수 있습니다.
 
 ```
 action(_:) ─▶ [Queue] ─▶ [Mutate] ─▶ [Effect] ─▶ [Reduce] ─▶ state
@@ -545,18 +545,16 @@ UI 밀림을 볼 때는 `Queue`를 보세요. 각 단계는 멀쩡해 보이는�
 계측은 opt-in입니다. 필요한 Reactable에서 `instrumentation`을 재정의합니다.
 
 ```swift
-#if DEBUG
 extension MyHighFrequencyReactable {
-    var instrumentation: ReactableInstrument.Options? { .default }
+    var instrumentation: ReactableInstrument.Options<Action>? { .default }
 }
-#endif
 ```
 
 `Options`의 `label`로 같은 타입의 여러 인스턴스를 구분하고, `warningThreshold`로 이 Reactable만의
 임계를 지정할 수 있습니다.
 
 ```swift
-var instrumentation: ReactableInstrument.Options? {
+var instrumentation: ReactableInstrument.Options<Action>? {
     .init(label: "carplay", warningThreshold: 0.016)   // 60fps 기준 한 프레임
 }
 ```
@@ -587,6 +585,68 @@ Slow reduce: playground.MyReactable updateLocation took 200.3ms (threshold 50.0m
 `Effect`는 `reduce`보다 상류에서 측정되고, Combine은 값을 `reduce`까지 동기적으로 전달한 뒤에야 완료
 이벤트를 보냅니다. 따라서 느린 `reduce`는 `Effect` 샘플도 함께 늘립니다. `Slow effect`와
 `Slow reduce`가 같은 액션을 지목하면 원인은 reduce이며, effect가 비동기 작업을 하는 게 아닙니다.
+
+### 대상 생명주기 이벤트
+
+`ReactableInstrument.Target`은 일치하는 액션의 선택한 단계를 관찰합니다. 대상 ID와 콜백 소비자는
+라이브러리와 독립적이므로 Firebase Performance 같은 릴리즈 안전한 수집기에 연결할 수 있습니다.
+
+```swift
+var instrumentation: ReactableInstrument.Options<Action>? {
+    .init(targets: [
+        .init(
+            .init(rawValue: "guide-helper.update-location"),
+            observing: [.effect],
+            emittingIn: .all
+        ) { (action: Action) in
+            guard case .locationUpdated = action else { return false }
+            return true
+        }
+    ])
+}
+
+ReactableInstrument.onTargetEvent = { event in
+    // 소비자 소유 큐에서 오래 걸리는 작업을 처리합니다.
+    print(event)
+}
+```
+
+`emittingIn`은 `.debugOnly`, `.releaseOnly`, `.all` 중 하나입니다. `mutate`는 `mutate(action:)` 호출,
+`reduce`는 각 `reduce(state:mutation:)` 호출, `effect`는 퍼블리셔 구독부터 완료까지의 시간을 측정합니다.
+`effect`에는 완료 전에 동기적으로 처리된 reduce가 포함되므로 한 사이클 지표로 사용할 수 있습니다.
+한 액션의 대상 단계들은 사이클 ID를 공유하며, 퍼블리셔가 취소되면 `finished` 대신 `cancelled`가 전달됩니다.
+
+기본 대상 목록과 대상 콜백은 비어 있습니다. 대상 콜백이 설치되지 않으면 대상 경로는 대상 할당이나 타임스탬프
+측정 전에 종료됩니다. 대상 콜백은 스트림 전달 스레드에서 실행되므로 빠르게 반환해야 합니다.
+
+### 계측 비용
+
+계측에도 비용이 들고, **DEBUG가 릴리즈보다 훨씬 비쌉니다.** `mutate`와 `reduce`가 거의 아무 일도
+하지 않는 Reactable에 액션 1,000,000개를 흘려 iOS 시뮬레이터에서 잰 값입니다. 사이클이 하는 일이 없으니
+계측 비용이 그대로 드러나는, 가장 불리한 조건입니다.
+
+| | DEBUG | Release |
+|---|---|---|
+| 계측 없음 | 5.9 µs/action | 4.5 µs/action |
+| `instrumentation` 설정, 대상 없음 | 18.4 µs (×3.11) | 4.5 µs (×1.00) |
+| 대상 선언, 콜백 미설치 | 18.8 µs (×3.18) | 4.5 µs (×0.99) |
+| 세 단계 전부 관찰, 콜백 설치 | 24.0 µs (×4.06) | 7.6 µs (×1.68) |
+
+DEBUG가 비싼 이유는 두 가지입니다. 릴리즈에서는 아예 컴파일되지 않는 시그포스트·통계·경고 코드를
+DEBUG에서는 실제로 실행하고, 그 코드가 `-Onone`으로 빌드됩니다. 양쪽이 똑같은 코드인 대상 경로만 떼어
+보면 릴리즈에서 +3.1 µs, DEBUG에서 +5.6 µs가 듭니다.
+
+정리하면:
+
+- **대상을 선언해 둔 채로 출시해도 됩니다.** 대상이 없거나, 대상이 있어도 `onTargetEvent`를 설치하지
+  않았다면 비용이 측정에 잡히지 않습니다. 무언가를 할당하거나 시간을 재기 전에 빠져나옵니다.
+- **DEBUG 계측은 자기가 재려는 값을 바꿔놓습니다.** 빈 사이클 기준으로 약 3배입니다. 호출이 잦은
+  Reactable에 켜면 확인하려던 시간 자체가 달라지므로, `enabledByDefault`로 한 번에 켜지 말고 필요한
+  Reactable에만 켜세요.
+- 집계 리포트가 필요 없다면 `ReactableInstrument.statisticsEnabled = false`로 DEBUG 오버헤드를 약 12%
+  줄일 수 있습니다.
+- `mutate`와 `reduce`가 실제로 일을 하면 위 배수는 모두 작아집니다. 단계마다 붙는 고정 비용이 사이클
+  전체에서 차지하는 몫이 줄기 때문입니다.
 
 ### 집계 리포트
 
