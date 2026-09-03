@@ -5,6 +5,7 @@
 //  Created by Jeehoon Son on 1/23/25.
 //
 
+import Foundation
 import SwiftUI
 @_exported import Combine
 
@@ -30,6 +31,7 @@ public protocol Reactable: AnyObject, IdentityHashable {
     var currentState: State { get }
     var cancellables: Set<AnyCancellable> { get set }
     var resultSubject: PassthroughSubject<ObservableEventResult<Self>, Never> { get set }
+    var instrumentation: ReactableInstrument.Options<Action>? { get }
     
     func initialize()
     func action(_ action: Action)
@@ -37,17 +39,6 @@ public protocol Reactable: AnyObject, IdentityHashable {
     func reduce(state: inout State, mutation: Mutation)
     func transformAction() -> AnyPublisher<Action, Never>
 
-    #if DEBUG
-    /// Instrumentation configuration for this Reactable's cycle: `os_signpost` intervals for
-    /// queue latency, mutate, effect, and reduce, plus a warning whenever a stage exceeds its
-    /// threshold.
-    ///
-    /// Returns `nil` by default, which means this Reactable is not measured. Override it to opt
-    /// in — global switches (`ReactableInstrument.enabledByDefault`, `filter`, or the
-    /// `REACTABLE_INSTRUMENT` environment variable) can still enable it without an override.
-    /// Removed entirely from release builds.
-    var instrumentation: ReactableInstrument.Options? { get }
-    #endif
 }
 
 public extension Reactable {
@@ -78,9 +69,7 @@ public extension Reactable {
         Empty<Mutation, Never>().eraseToAnyPublisher()
     }
     
-    #if DEBUG
-    var instrumentation: ReactableInstrument.Options? { nil }
-    #endif
+    var instrumentation: ReactableInstrument.Options<Action>? { nil }
     
     func reduce(state: inout State, mutation: Mutation) { }
     
@@ -150,11 +139,42 @@ public extension Reactable {
         let stream = Stream(action: actionSubject, state: stateSubject)
         WeakCache.stream.setValue(stream, forKey: self)
 
-        #if DEBUG
         // Resolved once per stream rather than once per action: building this string on every
         // cycle would be exactly the kind of hidden cost the instrument exists to catch.
         let instrumentName = String(describing: type(of: self))
-        #endif
+        let activeTargets = self.instrumentation?.targets.filter { $0.emitsInCurrentBuild && !$0.stages.isEmpty } ?? []
+        let targetEventHandler = ReactableInstrument.targetEventHandler()
+
+        @inline(__always)
+        func measureTargets<Output>(
+            _ stage: ReactableInstrument.Stage,
+            cycles: [ReactableTargetCycle<Action>],
+            _ operation: () -> Output
+        ) -> Output {
+            guard !cycles.isEmpty else { return operation() }
+            let measurements = cycles.compactMap { $0.begin(stage) }
+            let output = operation()
+            let endedAt = ReactableInstrument.timestamp()
+            measurements.forEach { $0.finish(at: endedAt) }
+            return output
+        }
+
+        @inline(__always)
+        func measureTargetEffect(
+            _ publisher: AnyPublisher<Mutation, Never>,
+            cycles: [ReactableTargetCycle<Action>]
+        ) -> AnyPublisher<Mutation, Never> {
+            guard cycles.contains(where: { $0.target.stages.contains(.effect) }) else { return publisher }
+
+            let measurement = TargetEffectMeasurement(cycles: cycles)
+            return publisher
+                .handleEvents(
+                    receiveSubscription: { _ in measurement.start() },
+                    receiveCompletion: { _ in measurement.finish() },
+                    receiveCancel: measurement.cancel
+                )
+                .eraseToAnyPublisher()
+        }
 
         let transformedActionStream = self.transformAction()
             .eraseToAnyPublisher()
@@ -170,14 +190,23 @@ public extension Reactable {
             .flatMap { [weak self] identity -> AnyPublisher<(IdentityAction, Mutation), Never> in
                 guard let self = self else { return .empty() }
 
-                let mutationPublisher: AnyPublisher<Mutation, Never>
-                #if DEBUG
                 var identity = identity
                 // `isStub` is read per action rather than once per stream: a Reactable can be
                 // wrapped in a `Stub` after its stream already exists, and `Stub` drives
                 // `mutate`/`reduce` directly *and* through the stream, so measuring it would count
-                // every sample twice. Checked after `resolveOptions` so a Reactable nobody asked to
-                // measure never pays for the lookup.
+                // every sample twice.
+                if !activeTargets.isEmpty, !self.isStub, let receive = targetEventHandler {
+                    identity.targetCycles = ReactableTargetCycle.make(
+                        for: identity.action,
+                        targets: activeTargets,
+                        reactable: instrumentName,
+                        receive: receive
+                    )
+                }
+                let targetCycles = identity.targetCycles
+
+                let mutationPublisher: AnyPublisher<Mutation, Never>
+                #if DEBUG
                 if let options = ReactableInstrument.resolveOptions(
                        name: instrumentName,
                        instrumentation: self.instrumentation
@@ -203,20 +232,20 @@ public extension Reactable {
                             reactable: instrumentName,
                             action: actionName
                         ) {
-                            self.mutate(action: identity.action)
+                            measureTargets(.mutate, cycles: targetCycles) { self.mutate(action: identity.action) }
                         },
                         options: options,
                         reactable: instrumentName,
                         action: actionName
                     )
                 } else {
-                    mutationPublisher = self.mutate(action: identity.action)
+                    mutationPublisher = measureTargets(.mutate, cycles: targetCycles) { self.mutate(action: identity.action) }
                 }
                 #else
-                mutationPublisher = self.mutate(action: identity.action)
+                mutationPublisher = measureTargets(.mutate, cycles: targetCycles) { self.mutate(action: identity.action) }
                 #endif
 
-                return mutationPublisher
+                return measureTargetEffect(mutationPublisher, cycles: targetCycles)
                     .map { (identity, $0) }
                     .handleEvents(receiveCompletion: { [weak self] completion in
                         guard let self else { return }
@@ -243,13 +272,13 @@ public extension Reactable {
                         reactable: instrumentName,
                         mutation: .caseName(of: mutation)
                     ) {
-                        self.reduce(state: &newState, mutation: mutation)
+                        measureTargets(.reduce, cycles: action.targetCycles) { self.reduce(state: &newState, mutation: mutation) }
                     }
                 } else {
-                    self.reduce(state: &newState, mutation: mutation)
+                    measureTargets(.reduce, cycles: action.targetCycles) { self.reduce(state: &newState, mutation: mutation) }
                 }
                 #else
-                self.reduce(state: &newState, mutation: mutation)
+                measureTargets(.reduce, cycles: action.targetCycles) { self.reduce(state: &newState, mutation: mutation) }
                 #endif
                 return (action, newState)
             }
@@ -277,6 +306,146 @@ public extension Reactable {
     }
 }
 
+// MARK: - Target instrumentation
+
+/// `cycle` ties one action's mutate, effect and reduce measurements together for one target.
+struct ReactableTargetCycle<Action: Sendable>: Sendable {
+    let target: ReactableInstrument.Target<Action>
+    let cycle: UInt64
+    let reactable: String
+    let receive: @Sendable (ReactableInstrument.TargetEvent) -> Void
+
+    @inline(__always)
+    static func make(
+        for action: Action,
+        targets: [ReactableInstrument.Target<Action>],
+        reactable: String,
+        receive: @escaping @Sendable (ReactableInstrument.TargetEvent) -> Void
+    ) -> [ReactableTargetCycle] {
+        targets.compactMap { target in
+            guard target.includes(action) else { return nil }
+            return ReactableTargetCycle(
+                target: target,
+                cycle: ReactableInstrument.makeTargetCycle(),
+                reactable: reactable,
+                receive: receive
+            )
+        }
+    }
+
+    @inline(__always)
+    func begin(_ stage: ReactableInstrument.Stage) -> TargetStageMeasurement<Action>? {
+        guard self.target.stages.contains(stage) else { return nil }
+        let id = ReactableInstrument.MeasurementID(
+            target: self.target.id,
+            cycle: self.cycle,
+            stage: stage,
+            occurrence: ReactableInstrument.makeTargetOccurrence()
+        )
+        let context = ReactableInstrument.TargetEventContext(id: id, reactable: self.reactable)
+        self.receive(.started(context))
+        return TargetStageMeasurement(
+            cycle: self,
+            context: context,
+            startedAt: ReactableInstrument.timestamp()
+        )
+    }
+}
+
+struct TargetStageMeasurement<Action: Sendable>: Sendable {
+    let cycle: ReactableTargetCycle<Action>
+    let context: ReactableInstrument.TargetEventContext
+    let startedAt: UInt64
+
+    @inline(__always)
+    func finish(at endedAt: UInt64, cancelled: Bool = false) {
+        let duration = ReactableInstrument.duration(from: self.startedAt, to: endedAt)
+        self.cycle.receive(
+            cancelled
+                ? .cancelled(self.context, duration: duration)
+                : .finished(self.context, duration: duration)
+        )
+    }
+}
+
+/// Orders the effect stage's events. A publisher can complete or be cancelled from inside
+/// `receiveSubscription`, so a terminal reached before the `started` events are emitted is held
+/// until they are, keeping every `started` paired with exactly one terminal event.
+private final class TargetEffectMeasurement<Action: Sendable>: @unchecked Sendable {
+    private enum State {
+        case idle
+        case starting
+        case started([TargetStageMeasurement<Action>])
+        case terminalBeforeStart(cancelled: Bool, endedAt: UInt64)
+        case terminalEmitted
+    }
+
+    private let cycles: [ReactableTargetCycle<Action>]
+    private let lock = NSLock()
+    private var state: State = .idle
+
+    init(cycles: [ReactableTargetCycle<Action>]) {
+        self.cycles = cycles
+    }
+
+    func start() {
+        self.lock.lock()
+        guard case .idle = self.state else {
+            self.lock.unlock()
+            return
+        }
+        self.state = .starting
+        self.lock.unlock()
+
+        let measurements = self.cycles.compactMap { $0.begin(.effect) }
+        var terminal: (cancelled: Bool, endedAt: UInt64)?
+        self.lock.lock()
+        switch self.state {
+        case .starting:
+            self.state = .started(measurements)
+        case let .terminalBeforeStart(cancelled, endedAt):
+            self.state = .terminalEmitted
+            terminal = (cancelled, endedAt)
+        case .idle, .started(_), .terminalEmitted:
+            break
+        }
+        self.lock.unlock()
+
+        if let terminal {
+            measurements.forEach {
+                $0.finish(at: terminal.endedAt, cancelled: terminal.cancelled)
+            }
+        }
+    }
+
+    func finish() {
+        self.end(cancelled: false)
+    }
+
+    func cancel() {
+        self.end(cancelled: true)
+    }
+
+    private func end(cancelled: Bool) {
+        let endedAt = ReactableInstrument.timestamp()
+        var measurements: [TargetStageMeasurement<Action>]?
+
+        self.lock.lock()
+        switch self.state {
+        case .idle, .terminalEmitted, .terminalBeforeStart(_, _):
+            break
+        case .starting:
+            self.state = .terminalBeforeStart(cancelled: cancelled, endedAt: endedAt)
+        case let .started(value):
+            self.state = .terminalEmitted
+            measurements = value
+        }
+        self.lock.unlock()
+
+        measurements?.forEach { $0.finish(at: endedAt, cancelled: cancelled) }
+    }
+}
+
 struct Stream<A: Sendable, S: Sendable>: Sendable {
     var action: PassthroughSubject<A, Never>
     var state: ReplaySubject<S, Never>
@@ -285,13 +454,14 @@ struct Stream<A: Sendable, S: Sendable>: Sendable {
 struct Identity<R: Reactable, A: Sendable>: Sendable {
     var action: A
     var continuation: CheckedContinuation<R.State, Never>?
+    var targetCycles: [ReactableTargetCycle<A>] = []
     #if DEBUG
     /// Monotonic timestamp taken when the action was handed to the main queue, used to measure
     /// how long it waited before `mutate` ran. Release builds do not carry this.
     var enqueuedAt: UInt64?
     /// Instrument options resolved once in the mutate stage and reused by reduce, so the
     /// process-wide instrument lock is taken once per action rather than once per mutation.
-    var instrumentOptions: ReactableInstrument.Options?
+    var instrumentOptions: ReactableInstrument.Options<A>?
     #endif
 
     /// Builds an identity, stamping the enqueue time in DEBUG builds.

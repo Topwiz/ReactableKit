@@ -2,7 +2,7 @@
 //  ReactableInstrument.swift
 //  ReactableKit
 //
-//  DEBUG-only instrumentation for the Reactable cycle.
+//  Reactable cycle instrumentation.
 //
 //  Every stage of the cycle is reported as an `os_signpost` interval so it shows up on the
 //  Instruments timeline, and anything slower than a threshold is logged as a warning:
@@ -16,53 +16,183 @@
 //  - `Effect` the lifetime of that publisher, from subscription to completion.
 //  - `Reduce` the synchronous cost of applying a mutation to the state.
 //
-//  Instrumentation is opt-in. A Reactable turns it on by overriding `instrumentation`, or it can
-//  be enabled process-wide with `enabledByDefault`, `filter`, or the `REACTABLE_INSTRUMENT`
-//  environment variable. Nothing here exists in a release build — this file and every call site
-//  in `Reactable.swift` are removed by `#if DEBUG`.
+//  Signposts, statistics, and warnings are available only in DEBUG builds. Target lifecycle
+//  events are available in all builds and are opt-in through `instrumentation` and `onTargetEvent`.
 //
 //  Instruments recipe: Edit Scheme ▸ Profile ▸ Build Configuration = Debug, then ⌘I, add the
 //  "os_signpost" instrument and look for subsystem `ReactableInstrument.subsystem`,
 //  category `Reactable`.
 //
 
+import Foundation
+
 #if DEBUG
 import Combine
-import Foundation
 import os
+#endif
 
 public enum ReactableInstrument {
 
     // MARK: - Options
 
-    /// Per-Reactable instrumentation configuration. Return one from `Reactable.instrumentation`
-    /// to turn measurement on for that Reactable.
-    public struct Options: Sendable {
-        /// Prefix used to tell several instances of the same type apart (for example "carplay").
-        /// Rendered ahead of the type name in signposts and warnings.
+    public struct Options<Action: Sendable>: Sendable {
         public var label: String?
-
-        /// Warning threshold for this Reactable only. `nil` falls back to
-        /// `ReactableInstrument.warningThreshold`.
         public var warningThreshold: TimeInterval?
+        public var targets: [Target<Action>]
 
-        public static let `default` = Options()
+        public static var `default`: Self { .init() }
 
-        public init(label: String? = nil, warningThreshold: TimeInterval? = nil) {
+        public init(
+            label: String? = nil,
+            warningThreshold: TimeInterval? = nil,
+            targets: [Target<Action>] = []
+        ) {
             self.label = label
             self.warningThreshold = warningThreshold
+            self.targets = targets
         }
     }
 
-    // MARK: - Events
-
-    /// A stage of the Reactable cycle.
-    public enum Stage: String, Sendable, CaseIterable {
+    public enum Stage: String, Hashable, Sendable, CaseIterable {
         case queue
         case mutate
         case effect
         case reduce
     }
+
+    public struct TargetID: Hashable, Sendable, RawRepresentable {
+        public let rawValue: String
+
+        public init(rawValue: String) {
+            self.rawValue = rawValue
+        }
+    }
+
+    public struct Target<Action: Sendable>: Sendable {
+        /// Build configurations in which the target callback receives lifecycle events.
+        public enum BuildConfiguration: Hashable, Sendable {
+            case debugOnly
+            case releaseOnly
+            case all
+        }
+
+        public let id: TargetID
+        public let stages: Set<Stage>
+        public let buildConfiguration: BuildConfiguration
+        private let includesAction: @Sendable (Action) -> Bool
+
+        public init(
+            _ id: TargetID,
+            observing stages: Set<Stage>,
+            emittingIn buildConfiguration: BuildConfiguration = .debugOnly,
+            _ includes: @escaping @Sendable (Action) -> Bool = { _ in true }
+        ) {
+            self.id = id
+            self.stages = stages
+            self.buildConfiguration = buildConfiguration
+            self.includesAction = includes
+        }
+
+        internal func includes(_ action: Action) -> Bool {
+            self.includesAction(action)
+        }
+
+        internal var emitsInCurrentBuild: Bool {
+            #if DEBUG
+            self.buildConfiguration != .releaseOnly
+            #else
+            self.buildConfiguration != .debugOnly
+            #endif
+        }
+    }
+
+    public struct MeasurementID: Hashable, Sendable {
+        public let target: TargetID
+        public let cycle: UInt64
+        public let stage: Stage
+        public let occurrence: UInt64
+
+        public init(
+            target: TargetID,
+            cycle: UInt64,
+            stage: Stage,
+            occurrence: UInt64 = 0
+        ) {
+            self.target = target
+            self.cycle = cycle
+            self.stage = stage
+            self.occurrence = occurrence
+        }
+    }
+
+    public struct TargetEventContext: Sendable {
+        public let id: MeasurementID
+        public let reactable: String
+
+        public init(id: MeasurementID, reactable: String) {
+            self.id = id
+            self.reactable = reactable
+        }
+    }
+
+    public enum TargetEvent: Sendable {
+        case started(TargetEventContext)
+        case finished(TargetEventContext, duration: TimeInterval)
+        case cancelled(TargetEventContext, duration: TimeInterval)
+    }
+
+    private static let targetEventLock = NSLock()
+    private nonisolated(unsafe) static var _onTargetEvent: (@Sendable (TargetEvent) -> Void)?
+    private nonisolated(unsafe) static var nextTargetCycle: UInt64 = 0
+    private nonisolated(unsafe) static var nextTargetOccurrence: UInt64 = 0
+
+    /// Receives selected target lifecycle events. Install the callback before a Reactable stream is created.
+    public static var onTargetEvent: (@Sendable (TargetEvent) -> Void)? {
+        get { self.targetEventLock.perform { self._onTargetEvent } }
+        set { self.targetEventLock.perform { self._onTargetEvent = newValue } }
+    }
+
+    internal static func makeTargetCycle() -> UInt64 {
+        self.targetEventLock.perform {
+            self.nextTargetCycle &+= 1
+            return self.nextTargetCycle
+        }
+    }
+
+    internal static func makeTargetOccurrence() -> UInt64 {
+        self.targetEventLock.perform {
+            self.nextTargetOccurrence &+= 1
+            return self.nextTargetOccurrence
+        }
+    }
+
+    internal static func targetEventHandler() -> (@Sendable (TargetEvent) -> Void)? {
+        self.targetEventLock.perform { self._onTargetEvent }
+    }
+
+    // MARK: - Timing
+
+    /// Monotonic timestamp in nanoseconds. Not affected by wall-clock adjustments, unlike `Date`.
+    @inline(__always)
+    public static func timestamp() -> UInt64 {
+        DispatchTime.now().uptimeNanoseconds
+    }
+
+    @inline(__always)
+    public static func elapsed(since start: UInt64) -> TimeInterval {
+        self.duration(from: start, to: self.timestamp())
+    }
+
+    /// Interval between two `timestamp()` readings. Used when several measurements share a single
+    /// end reading, so they all report against the same instant.
+    @inline(__always)
+    internal static func duration(from start: UInt64, to end: UInt64) -> TimeInterval {
+        guard end > start else { return 0 }
+        return TimeInterval(end - start) / 1_000_000_000
+    }
+
+    #if DEBUG
+    // MARK: - Events
 
     /// A single measurement. Delivered to `onEvent` regardless of whether it exceeded the
     /// threshold, so a debug tool can render every cycle rather than only the slow ones.
@@ -252,36 +382,24 @@ public enum ReactableInstrument {
     /// it decides on its own — a non-matching type name is *not* instrumented even when
     /// `enabledByDefault` or `REACTABLE_INSTRUMENT` is on, so a filter narrows a global switch
     /// rather than widening it.
-    public static func resolveOptions(name: String, instrumentation: Options?) -> Options? {
+    public static func resolveOptions<Action: Sendable>(
+        name: String,
+        instrumentation: Options<Action>?
+    ) -> Options<Action>? {
         if let instrumentation { return instrumentation }
         guard self.globalEnablementConfigured || self.environmentEnabled else { return nil }
-        return self.lock.perform { () -> Options? in
-            if let filter = self._filter { return filter(name) ? Options.default : nil }
-            if self._enabledByDefault || self.environmentEnabled { return Options.default }
+        return self.lock.perform { () -> Options<Action>? in
+            if let filter = self._filter { return filter(name) ? .default : nil }
+            if self._enabledByDefault || self.environmentEnabled { return .default }
             return nil
         }
-    }
-
-    // MARK: - Timing
-
-    /// Monotonic timestamp in nanoseconds. Not affected by wall-clock adjustments, unlike `Date`.
-    @inline(__always)
-    public static func timestamp() -> UInt64 {
-        DispatchTime.now().uptimeNanoseconds
-    }
-
-    @inline(__always)
-    public static func elapsed(since start: UInt64) -> TimeInterval {
-        let now = DispatchTime.now().uptimeNanoseconds
-        guard now > start else { return 0 }
-        return TimeInterval(now - start) / 1_000_000_000
     }
 
     // MARK: - Measurement
 
     /// Measures the synchronous cost of building a mutation publisher.
-    public static func measureMutate<Result>(
-        options: Options = .default,
+    public static func measureMutate<Action: Sendable, Result>(
+        options: Options<Action>,
         reactable: String,
         action: LazyName,
         _ body: () -> Result
@@ -290,8 +408,8 @@ public enum ReactableInstrument {
     }
 
     /// Measures the synchronous cost of applying a mutation to the state.
-    public static func measureReduce(
-        options: Options = .default,
+    public static func measureReduce<Action: Sendable>(
+        options: Options<Action>,
         reactable: String,
         mutation: LazyName,
         _ body: () -> Void
@@ -303,8 +421,8 @@ public enum ReactableInstrument {
     ///
     /// This is the measurement that catches a backed-up main queue: every individual stage can look
     /// healthy while this number grows without bound.
-    public static func recordQueueLatency(
-        options: Options = .default,
+    public static func recordQueueLatency<Action: Sendable>(
+        options: Options<Action>,
         reactable: String,
         action: LazyName,
         enqueuedAt: UInt64
@@ -335,9 +453,9 @@ public enum ReactableInstrument {
     ///   `reduce` therefore inflates the `Effect` sample too, producing a second warning for the
     ///   same root cause. When `Slow effect` and `Slow reduce` report the same action, the reduce
     ///   is the cause — the effect is not doing async work.
-    public static func measureEffect<Output, Failure: Error>(
+    public static func measureEffect<Action: Sendable, Output, Failure: Error>(
         _ publisher: AnyPublisher<Output, Failure>,
-        options: Options = .default,
+        options: Options<Action>,
         reactable: String,
         action: LazyName
     ) -> AnyPublisher<Output, Failure> {
@@ -373,11 +491,11 @@ public enum ReactableInstrument {
             .eraseToAnyPublisher()
     }
 
-    private static func endEffect(
+    private static func endEffect<Action: Sendable>(
         _ tracker: EffectTracker,
         signposter: OSSignposter,
         cancelled: Bool,
-        options: Options,
+        options: Options<Action>,
         reactable: String,
         action: LazyName
     ) {
@@ -398,9 +516,9 @@ public enum ReactableInstrument {
         )
     }
 
-    private static func measure<Result>(
+    private static func measure<Action: Sendable, Result>(
         stage: Stage,
-        options: Options,
+        options: Options<Action>,
         reactable: String,
         name: LazyName,
         _ body: () -> Result
@@ -428,9 +546,9 @@ public enum ReactableInstrument {
     ///
     /// The case name is only materialised if something actually needs it, so a Reactable measured
     /// with statistics off and no observer attached pays no reflection cost on a fast cycle.
-    private static func finish(
+    private static func finish<Action: Sendable>(
         stage: Stage,
-        options: Options,
+        options: Options<Action>,
         reactable: String,
         name: LazyName,
         duration: TimeInterval
@@ -707,7 +825,11 @@ public enum ReactableInstrument {
 
     // MARK: - Formatting
 
-    private static func subjectText(options: Options, reactable: String, name: String) -> String {
+    private static func subjectText<Action: Sendable>(
+        options: Options<Action>,
+        reactable: String,
+        name: String
+    ) -> String {
         guard let label = options.label else { return "\(reactable) \(name)" }
         return "\(label).\(reactable) \(name)"
     }
@@ -753,8 +875,10 @@ public enum ReactableInstrument {
             }
         }
     }
+    #endif
 }
 
+#if DEBUG
 private extension ReactableInstrument.Stage {
     var signpostName: StaticString {
         switch self {
