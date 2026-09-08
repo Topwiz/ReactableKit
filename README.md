@@ -2,6 +2,8 @@
 
 **[🇰🇷 한국어 ReadMe](README/README_ko.md)**
 
+**[🤖 Coding Guide for AI Agents](AGENTS.md)** — do/don't rules with reasons, for agents (and humans) writing ReactableKit & DependencyInjectableKit code.
+
 ## 📌 Introduction
 
 **ReactableKit** is a lightweight yet powerful state management framework for **SwiftUI** applications built on **Combine**.
