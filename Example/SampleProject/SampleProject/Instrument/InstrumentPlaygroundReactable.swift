@@ -54,7 +54,7 @@ final class InstrumentPlaygroundReactable: Reactable, @unchecked Sendable {
     let initialState = State()
 
     /// Opting in is all it takes — everything else is configured globally on `ReactableInstrument`.
-    var instrumentation: ReactableInstrument.Options? { .init(label: "playground") }
+    var instrumentation: ReactableInstrument.Options<Action>? { .init(label: "playground") }
 
     /// Drives flood mode. Actions pushed here go through `transformAction()`, so they are stamped
     /// and measured exactly like an action sent from the UI.

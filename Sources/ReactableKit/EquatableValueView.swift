@@ -8,9 +8,39 @@
 import Foundation
 import SwiftUI
 
-public struct EquatableValueView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
+struct EquatableValueContentView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
+    let value: Value
+    let colorScheme: ColorScheme
+    let content: (Value) -> Content
+
+    var body: some View {
+        self.content(self.value)
+    }
+
+    static func == (lhs: EquatableValueContentView, rhs: EquatableValueContentView) -> Bool {
+        lhs.value == rhs.value && lhs.colorScheme == rhs.colorScheme
+    }
+}
+
+struct EquatableBindingContentView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
+    let value: Binding<Value>
+    let colorScheme: ColorScheme
+    let content: (Binding<Value>) -> Content
+
+    var body: some View {
+        self.content(self.value)
+    }
+
+    static func == (lhs: EquatableBindingContentView, rhs: EquatableBindingContentView) -> Bool {
+        lhs.value.wrappedValue == rhs.value.wrappedValue && lhs.colorScheme == rhs.colorScheme
+    }
+}
+
+public struct EquatableValueView<Value: Equatable, Content: View>: View {
     private let content: (Value) -> Content
     private let value: Value
+
+    @Environment(\.colorScheme) private var colorScheme
 
     public init(value: Value, @ViewBuilder content: @escaping (Value) -> Content) {
         self.content = content
@@ -18,17 +48,19 @@ public struct EquatableValueView<Value: Equatable, Content: View>: View, @precon
     }
 
     public var body: some View {
-        content(self.value)
-    }
-
-    public static func == (lhs: EquatableValueView, rhs: EquatableValueView) -> Bool {
-        lhs.value == rhs.value
+        EquatableValueContentView(
+            value: self.value,
+            colorScheme: self.colorScheme,
+            content: self.content
+        )
     }
 }
 
-public struct EquatableBindingView<Value: Equatable, Content: View>: View, @preconcurrency Equatable {
+public struct EquatableBindingView<Value: Equatable, Content: View>: View {
     private let content: (Binding<Value>) -> Content
     private let value: Binding<Value>
+
+    @Environment(\.colorScheme) private var colorScheme
 
     public init(value: Binding<Value>, @ViewBuilder content: @escaping (Binding<Value>) -> Content) {
         self.content = content
@@ -36,11 +68,11 @@ public struct EquatableBindingView<Value: Equatable, Content: View>: View, @prec
     }
 
     public var body: some View {
-        content(self.value)
-    }
-
-    public static func == (lhs: EquatableBindingView, rhs: EquatableBindingView) -> Bool {
-        lhs.value.wrappedValue == rhs.value.wrappedValue
+        EquatableBindingContentView(
+            value: self.value,
+            colorScheme: self.colorScheme,
+            content: self.content
+        )
     }
 }
 
