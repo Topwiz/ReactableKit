@@ -320,14 +320,20 @@ properties, which it discovers by reflecting over State at init. A plain stored
 property changes silently: the value is correct, the screen is stale. Both
 wrappers require `Value: Equatable & Sendable`.
 
-### ❌ Never: read whole state in `body`
+### ⚠️ Know that reading `store.state` in `body` invalidates the whole body
 
 ```swift
-// WRONG — any state change re-renders everything below
+// Works — but any @ViewState change re-evaluates this whole body
 var body: some View {
     Text("\(store.state.count)")
 }
 ```
+
+This is correct and stays in sync: `objectWillChange` fires only when a
+`@ViewState` or `@SharedViewState` value actually changes, and both wrappers
+gate on `Equatable` first. The cost is scope — changing `title` also
+re-evaluates a body that only reads `count`. Use `updateOn` when you want that
+invalidation narrowed to one property.
 
 ### ❌ Never: create the Store inside `body`
 
