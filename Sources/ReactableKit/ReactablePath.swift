@@ -66,6 +66,7 @@ public struct ReactablePath: Hashable, @unchecked Sendable {
 
 extension NavigationStack {
     /// Initializes a `NavigationStack` with a `ReactablePath`.
+    @MainActor
     public init<Content: View, Destination: View>(
         reactablePath: Binding<ReactablePath>,
         @ViewBuilder root: () -> Content,
