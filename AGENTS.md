@@ -4,7 +4,7 @@ A rulebook for AI coding agents (and humans) working in a codebase that uses the
 two libraries. Every rule below is stated as **Do this / Never do this** with the
 reason attached, because the reason is what tells you when the rule stops applying.
 
-Assumed baseline: Swift 6 language mode, iOS 16+.
+Assumed baseline: Swift 6 language mode, iOS 16+ / macOS 26+.
 
 ---
 
@@ -27,18 +27,17 @@ Assumed baseline: Swift 6 language mode, iOS 16+.
 
 ## 0.5 Building this package
 
-`Package.swift` declares `platforms: [.iOS(.v16)]` only. A plain `swift build`
-on macOS therefore fails — `ReactableKit` imports `UIKit`, and
-`DependencyInjectableKit` uses SwiftUI `@State`, which the macOS availability
-floor rejects. Those errors are the platform, not your change.
+`Package.swift` uses `swift-tools-version: 6.2` and declares
+`platforms: [.iOS(.v16), .macOS(.v26)]`, so building it needs Xcode 26 or later.
+`UIKit` is imported only under `#if canImport(UIKit)`; on macOS the memory-warning
+cleanup uses a `DispatchSource` memory-pressure source instead.
 
-Build and test against an iOS destination instead. The package exposes the
+Build and test against both an iOS and a macOS destination. The package exposes the
 `ReactableKit` scheme for the library and `ReactableKit-Package` for the test
 target; the test target's sources live in `Tests/ReactableKitTest` and are picked
 up correctly despite the directory name.
 
-Follow whatever build mechanism the project mandates. Do not conclude the tree is
-broken from a failed macOS `swift build`.
+Follow whatever build mechanism the project mandates.
 
 ---
 
@@ -440,6 +439,10 @@ struct State {
 
 `@Shared` gives every holder of the same key the same value. `@SharedViewState`
 adds view invalidation on top, for shared state that drives UI.
+
+`.file()` defaults to `.documentDirectory` on iOS and `.applicationSupportDirectory`
+on macOS, where files go under a bundle-identifier folder so non-sandboxed apps do
+not share them.
 
 ### ❌ Never: use `.file` or `.userDefaults` with a non-`Codable` value
 
@@ -887,6 +890,9 @@ final class ProfileViewController: UIViewController, ReactableView {
 
 Setting `reactable` cancels the previous subscriptions and calls `bind` again, so
 `bind` must be safe to run more than once. Always capture `[weak self]` in sinks.
+
+`ReactableView` only requires `AnyObject`, so an AppKit `NSViewController` adopts it
+the same way on macOS.
 
 ---
 

@@ -7,7 +7,9 @@
 
 import Foundation
 import Combine
+#if canImport(UIKit)
 import UIKit
+#endif
 
 // MARK: - NSRecursiveLock Extension
 
@@ -138,22 +140,6 @@ final class PersistentReference<Value>: MutableReference, @unchecked Sendable {
         }
     }
     
-    private func getFileURL(directory: FileManager.SearchPathDirectory, path: String?, key: String) -> URL? {
-        let fileManager = FileManager.default
-        guard let directoryURL = fileManager.urls(for: directory, in: .userDomainMask).first else {
-            return nil
-        }
-        
-        var folderURL = directoryURL
-        if let path {
-            folderURL = folderURL.appendingPathComponent(path)
-        } else {
-            folderURL = folderURL.appendingPathComponent("Reactable")
-        }
-        
-        return folderURL.appendingPathComponent("\(key).json")
-    }
-    
     private func createFolderIfNeeded(for fileURL: URL) throws {
         let folderURL = fileURL.deletingLastPathComponent()
         let fileManager = FileManager.default
@@ -212,6 +198,9 @@ final class ManagedMemoryStorage: @unchecked Sendable {
 
     private var storage: [String: Entry] = [:]
     private let lock = NSRecursiveLock()
+    #if !canImport(UIKit)
+    private var memoryPressureSource: DispatchSourceMemoryPressure?
+    #endif
 
     private init() {
         setupAutomaticCleanup()
@@ -414,23 +403,8 @@ final class ManagedMemoryStorage: @unchecked Sendable {
         return decoded
     }
     
-    private func getFileURL(directory: FileManager.SearchPathDirectory, path: String?, key: String) -> URL? {
-        let fileManager = FileManager.default
-        guard let directoryURL = fileManager.urls(for: directory, in: .userDomainMask).first else {
-            return nil
-        }
-        
-        var folderURL = directoryURL
-        if let path {
-            folderURL = folderURL.appendingPathComponent(path)
-        } else {
-            folderURL = folderURL.appendingPathComponent("Reactable")
-        }
-        
-        return folderURL.appendingPathComponent("\(key).json")
-    }
-    
     private func setupAutomaticCleanup() {
+        #if canImport(UIKit)
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification,
             object: nil,
@@ -438,5 +412,37 @@ final class ManagedMemoryStorage: @unchecked Sendable {
         ) { [weak self] _ in
             self?.cleanupUnusedReferences()
         }
+        #else
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        source.setEventHandler { [weak self] in
+            self?.cleanupUnusedReferences()
+        }
+        source.resume()
+        self.memoryPressureSource = source
+        #endif
     }
+}
+
+// MARK: - File URL
+
+private func getFileURL(directory: FileManager.SearchPathDirectory, path: String?, key: String) -> URL? {
+    let fileManager = FileManager.default
+    guard let directoryURL = fileManager.urls(for: directory, in: .userDomainMask).first else {
+        return nil
+    }
+
+    var folderURL = directoryURL
+    #if os(macOS)
+    // Non-sandboxed apps share Application Support, so scope it by bundle identifier.
+    if directory == .applicationSupportDirectory, let bundleIdentifier = Bundle.main.bundleIdentifier {
+        folderURL = folderURL.appendingPathComponent(bundleIdentifier)
+    }
+    #endif
+    if let path {
+        folderURL = folderURL.appendingPathComponent(path)
+    } else {
+        folderURL = folderURL.appendingPathComponent("Reactable")
+    }
+
+    return folderURL.appendingPathComponent("\(key).json")
 }

@@ -13,7 +13,7 @@ import Combine
 
 public enum StorageType: Hashable {
     case userDefaults(UserDefaults = .standard)
-    case file(directory: FileManager.SearchPathDirectory = .documentDirectory, path: String? = nil)
+    case file(directory: FileManager.SearchPathDirectory = .reactableDefault, path: String? = nil)
     /// Ephemeral in-memory storage. Data is dropped when all references are released.
     case memory
     /// Singleton-like in-memory storage. Data is kept in process even if all references are released,
@@ -25,6 +25,17 @@ public enum StorageType: Hashable {
         if case .userDefaults = self { return true }
         if case .file = self { return false }
         return false
+    }
+}
+
+extension FileManager.SearchPathDirectory {
+    @usableFromInline
+    static var reactableDefault: Self {
+        #if os(macOS)
+        .applicationSupportDirectory
+        #else
+        .documentDirectory
+        #endif
     }
 }
 

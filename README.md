@@ -13,7 +13,8 @@ Inspired by ReactorKit architecture, this framework provides a structured approa
 ## 📋 Requirements
 
 - ✅ iOS 16.0+
-- ✅ Swift 5+
+- ✅ macOS 26.0+
+- ✅ Swift 6.2+ (Xcode 26+)
 
 ## 📦 Installation
 
