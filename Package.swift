@@ -24,7 +24,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ReactableKitTests",
-            dependencies: ["ReactableKit"]
+            dependencies: ["ReactableKit", "DependencyInjectableKit"]
         )
     ]
 )

@@ -867,6 +867,45 @@ trio with `@MainActor` on everything, and pair with
 `MainActorDependencyInjectable`. Use them for SwiftUI views and anything else
 that can only be constructed on the main actor.
 
+### ✅ Do: swap a dependency for a scope with `withDependencies`
+
+```swift
+@Test
+func loadsItems() async throws {
+    try await withDependencies {
+        $0[Service.self] = Service.TestMock()
+    } operation: {
+        let repository = Repository()   // @Dependency(\.service) resolves to the mock
+        #expect(try await repository.load().isEmpty == false)
+    }
+}
+```
+
+An override replaces `real`, `preview`, and `test` alike, and is keyed by the
+`DependencyInjectable` type, so every resolution of that type sees it —
+`@Dependency`, `@LazyDependency`, `@ViewDependency`, and direct
+`GlobalDependencyKey()` access. A nested scope starts from the enclosing one's
+overrides; assigning `nil` removes one.
+
+Prefer this over a `static var test` backed by global storage. The overrides are
+task-local, so tests running in parallel each see only their own, while a
+`static var test` that hits `UserDefaults` or a singleton is shared by every test
+in the process.
+
+### ⚠️ Know where an override stops reaching
+
+The scope follows the current task and its child tasks — `async let`, task
+groups, and `Task { }` all inherit it. It does **not** reach:
+
+- a resolution deferred into an escaping closure, a Combine pipeline, or a
+  `DispatchQueue` block that runs after `operation` returns;
+- `Task.detached`.
+
+Those fall back to the environment's value. Resolve the dependency inside the
+scope instead — `@Dependency` captures it at the owner's `init`, so an owner
+created inside the scope keeps the override for its whole life. A
+`@LazyDependency` first read outside the scope does not.
+
 ---
 
 ## 8. UIKit
