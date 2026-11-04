@@ -26,6 +26,9 @@ public struct GlobalDependencyKey: Sendable {
     public static var appEnvironment: AppEnvironment { .current }
     
     public subscript<T: DependencyInjectable>(_: T.Type) -> T.DependencyType {
+        if let override = DependencyOverrides.current[T.self] {
+            return override
+        }
         switch GlobalDependencyKey.appEnvironment {
         case .real:
             return T.real
@@ -38,6 +41,9 @@ public struct GlobalDependencyKey: Sendable {
     
     @MainActor
     public subscript<T: MainActorDependencyInjectable>(_: T.Type) -> T.DependencyType {
+        if let override = DependencyOverrides.current[T.self] {
+            return override
+        }
         switch GlobalDependencyKey.appEnvironment {
         case .real:
             return T.real

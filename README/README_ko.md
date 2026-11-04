@@ -522,6 +522,26 @@ extension MyFactory: DependencyInjectable {
 ```
 
 
+#### 4. 범위 안에서 의존성 바꿔 끼우기
+
+`withDependencies` 는 그 안에서 실행되는 코드의 의존성을 바꿉니다. 병렬로 도는 테스트끼리 Mock 이나 전역 상태를
+공유하지 않게 할 때 씁니다.
+
+```swift
+@Test
+func loadsItems() async throws {
+    try await withDependencies {
+        $0[Service.self] = Service.TestMock()
+    } operation: {
+        let repository = Repository()   // @Dependency(\.service) 가 Mock 으로 해석된다
+        #expect(try await repository.load().isEmpty == false)
+    }
+}
+```
+
+오버라이드는 task-local 입니다. 현재 태스크와 자식 태스크까지는 전달되지만, `Task.detached` 나 escaping 클로저,
+Combine 파이프라인, `DispatchQueue` 로 미뤄진 코드에는 전달되지 않습니다.
+
 ## 🔬 디버깅 — `ReactableInstrument`
 
 `ReactableInstrument`는 Reactable 사이클의 각 단계를 계측하고, 임계를 넘는 단계를 경고합니다.

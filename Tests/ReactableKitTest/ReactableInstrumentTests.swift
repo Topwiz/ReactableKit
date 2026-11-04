@@ -63,7 +63,7 @@ struct ReactableInstrumentTests {
         var initialState = State()
         var reduceWorkSeconds: TimeInterval = 0
 
-        var instrumentation: ReactableInstrument.Options? { .default }
+        var instrumentation: ReactableInstrument.Options<Action>? { .default }
 
         func mutate(action: Action) -> AnyPublisher<Mutation, Never> {
             switch action {

@@ -564,6 +564,26 @@ extension MyFactory: DependencyInjectable {
 }
 ```
 
+#### 4. Overriding dependencies in a scope
+
+`withDependencies` replaces dependencies for the code that runs inside it, which keeps tests that run
+in parallel from sharing a mock or global state.
+
+```swift
+@Test
+func loadsItems() async throws {
+    try await withDependencies {
+        $0[Service.self] = Service.TestMock()
+    } operation: {
+        let repository = Repository()   // @Dependency(\.service) resolves to the mock
+        #expect(try await repository.load().isEmpty == false)
+    }
+}
+```
+
+Overrides are task-local: they reach the current task and its child tasks, but not `Task.detached` or
+work deferred to an escaping closure, a Combine pipeline, or a `DispatchQueue`.
+
 ## 🔬 Debugging — `ReactableInstrument`
 
 `ReactableInstrument` measures every stage of the Reactable cycle and warns when one of them takes
