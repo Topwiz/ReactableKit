@@ -147,7 +147,8 @@ public extension Publisher {
     /// - Parameter trigger: A publisher that stops the emission of values.
     /// - Returns: A publisher that stops when the trigger emits a value.
     func takeUntil<T>(_ trigger: AnyPublisher<T, Failure>) -> AnyPublisher<Output, Failure> {
-        self.prefix(untilOutputFrom: trigger)
+        // prefix(untilOutputFrom:) keeps its trigger subscription alive when the trigger fires first; first() cancels it.
+        self.prefix(untilOutputFrom: trigger.first())
             .eraseToAnyPublisher()
     }
 }
